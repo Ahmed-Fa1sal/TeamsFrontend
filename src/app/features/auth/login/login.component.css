@@ -1,0 +1,111 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.min-vh-100 {
+  min-height: 100vh;
+}
+
+.w-30 {
+  width: 30%;
+  min-width: 350px;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.font-bold {
+  font-weight: bold;
+  color: #667eea;
+  text-decoration: none;
+}
+
+.font-bold:hover {
+  text-decoration: underline;
+}
+
+/* PrimeFlex overrides */
+.p-d-flex {
+  display: flex !important;
+}
+
+.p-jc-center {
+  justify-content: center !important;
+}
+
+.p-ai-center {
+  align-items: center !important;
+}
+
+.p-flex-column {
+  flex-direction: column !important;
+}
+
+.p-gap-4 {
+  gap: 1.5rem !important;
+}
+
+.p-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.p-mb-2 {
+  margin-bottom: 0.5rem !important;
+}
+
+.p-mb-4 {
+  margin-bottom: 1rem !important;
+}
+
+.p-mb-0 {
+  margin-bottom: 0 !important;
+}
+
+.p-mt-1 {
+  margin-top: 0.25rem !important;
+}
+
+.p-d-block {
+  display: block !important;
+}
+
+.p-error {
+  color: #d32f2f;
+  font-size: 0.875rem;
+}
+
+/* Card styling */
+:deep(.p-card) {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+:deep(.p-card-header) {
+  padding: 1.5rem;
+}
+
+:deep(.p-card-body) {
+  padding: 1.5rem;
+}
+
+:deep(.p-card-footer) {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .w-30 {
+    width: 90%;
+    min-width: unset;
+  }
+}

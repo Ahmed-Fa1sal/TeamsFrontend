@@ -1,0 +1,33 @@
+# Node modules and build outputs
+node_modules/
+dist/
+out-tsc/
+.dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Angular
+.angular/
+
+# Testing
+coverage/
+
+# Logs
+npm-debug.log
+npm-error.log
+yarn-error.log
+*.log
+
+# System files
+Thumbs.db
