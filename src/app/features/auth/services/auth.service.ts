@@ -69,10 +69,18 @@ export class AuthService {
     const url = getApiUrl('/auth/login');
     return this.http.post<AuthResponse>(url, credentials).pipe(
       tap((response) => {
-        if (response.success || response.token) {
+        const isSuccess = response.success === true || !!response.token || !!response.user;
+        if (isSuccess) {
           const newState: AuthState = {
             isAuthenticated: true,
-            user: response.user || null,
+            user:
+              response.user ||
+              ({
+                email: credentials.email,
+                firstName: credentials.email.split('@')[0],
+                lastName: '',
+                username: credentials.email.split('@')[0]
+              } as any),
             token: response.token || null,
             loading: false,
             error: null
@@ -98,10 +106,18 @@ export class AuthService {
     const url = getApiUrl('/auth/register');
     return this.http.post<AuthResponse>(url, data).pipe(
       tap((response) => {
-        if (response.success || response.token) {
+        const isSuccess = response.success === true || !!response.token || !!response.user;
+        if (isSuccess) {
           const newState: AuthState = {
             isAuthenticated: true,
-            user: response.user || null,
+            user:
+              response.user ||
+              ({
+                email: data.email,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                username: data.username
+              } as any),
             token: response.token || null,
             loading: false,
             error: null
@@ -181,8 +197,7 @@ export class AuthService {
     if (savedState) {
       try {
         const state = JSON.parse(savedState) as AuthState;
-        // Only restore if there's a valid token and user
-        if (state.token && state.user) {
+        if (state.isAuthenticated) {
           this.authState$.next(state);
         }
       } catch (error) {

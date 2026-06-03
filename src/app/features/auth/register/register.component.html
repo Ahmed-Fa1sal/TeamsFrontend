@@ -1,118 +1,116 @@
-<div class="p-d-flex p-jc-center p-ai-center min-vh-100">
-  <p-card class="register-card w-40">
-    <ng-template pTemplate="header">
-      <div class="text-center">
-        <h1>Create Account</h1>
-      </div>
-    </ng-template>
+<div class="auth-page">
+  <div class="auth-panel slide-in-up">
+    <section class="auth-panel__hero">
+      <span class="brand-chip">Teams</span>
+      <h1>Create your account</h1>
+      <p>Join your team and start collaborating with a secure account.</p>
+    </section>
 
-    <!-- Error Messages -->
-    <p-messages [(value)]="messages" [enableService]="false" [closable]="false" class="mb-4"></p-messages>
+    <p-card class="auth-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <h2>Register</h2>
+          <p>Fill in the details below to get started.</p>
+        </div>
+      </ng-template>
 
-    <!-- Register Form -->
-    <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="p-d-flex p-flex-column p-gap-4">
-      <!-- First Name Field -->
-      <div class="p-field">
-        <label for="firstName" class="p-d-block p-mb-2">First Name</label>
-        <input
-          pInputText
-          id="firstName"
-          type="text"
-          formControlName="firstName"
-          placeholder="Enter your first name"
-          class="w-full"
-        />
-        <small class="p-error p-d-block p-mt-1" *ngIf="getFieldError('firstName')">
-          {{ getFieldError('firstName') }}
-        </small>
-      </div>
+      <p-messages [(value)]="messages" [enableService]="false" [closable]="false" class="mb-4"></p-messages>
 
-      <!-- Last Name Field -->
-      <div class="p-field">
-        <label for="lastName" class="p-d-block p-mb-2">Last Name</label>
-        <input
-          pInputText
-          id="lastName"
-          type="text"
-          formControlName="lastName"
-          placeholder="Enter your last name"
-          class="w-full"
-        />
-        <small class="p-error p-d-block p-mt-1" *ngIf="getFieldError('lastName')">
-          {{ getFieldError('lastName') }}
-        </small>
-      </div>
+      <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="form-grid">
+        <div class="p-field">
+          <label for="firstName" class="field-label">First Name</label>
+          <input
+            pInputText
+            id="firstName"
+            type="text"
+            formControlName="firstName"
+            placeholder="Enter your first name"
+            class="w-full"
+          />
+          <small class="p-error" *ngIf="getFieldError('firstName')">
+            {{ getFieldError('firstName') }}
+          </small>
+        </div>
 
-      <!-- Username Field -->
-      <div class="p-field">
-        <label for="username" class="p-d-block p-mb-2">Username</label>
-        <input
-          pInputText
-          id="username"
-          type="text"
-          formControlName="username"
-          placeholder="Choose a username"
-          class="w-full"
-        />
-        <small class="p-error p-d-block p-mt-1" *ngIf="getFieldError('username')">
-          {{ getFieldError('username') }}
-        </small>
-      </div>
+        <div class="p-field">
+          <label for="lastName" class="field-label">Last Name</label>
+          <input
+            pInputText
+            id="lastName"
+            type="text"
+            formControlName="lastName"
+            placeholder="Enter your last name"
+            class="w-full"
+          />
+          <small class="p-error" *ngIf="getFieldError('lastName')">
+            {{ getFieldError('lastName') }}
+          </small>
+        </div>
 
-      <!-- Email Field -->
-      <div class="p-field">
-        <label for="email" class="p-d-block p-mb-2">Email</label>
-        <input
-          pInputText
-          id="email"
-          type="email"
-          formControlName="email"
-          placeholder="Enter your email"
-          class="w-full"
-        />
-        <small class="p-error p-d-block p-mt-1" *ngIf="getFieldError('email')">
-          {{ getFieldError('email') }}
-        </small>
-      </div>
+        <div class="p-field">
+          <label for="username" class="field-label">Username</label>
+          <input
+            pInputText
+            id="username"
+            type="text"
+            formControlName="username"
+            placeholder="Choose a username"
+            class="w-full"
+          />
+          <small class="p-error" *ngIf="getFieldError('username')">
+            {{ getFieldError('username') }}
+          </small>
+        </div>
 
-      <!-- Password Field -->
-      <div class="p-field">
-        <label for="password" class="p-d-block p-mb-2">Password</label>
-        <input
-          pInputText
-          id="password"
-          type="password"
-          formControlName="password"
-          placeholder="Enter a strong password"
-          class="w-full"
-        />
-        <small class="p-error p-d-block p-mt-1" *ngIf="getFieldError('password')">
-          {{ getFieldError('password') }}
-        </small>
-        <small class="p-d-block p-mt-2 info-text">
-          Password must be at least 8 characters with uppercase, lowercase, and number
-        </small>
-      </div>
+        <div class="p-field">
+          <label for="email" class="field-label">Email</label>
+          <input
+            pInputText
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="Enter your email"
+            class="w-full"
+          />
+          <small class="p-error" *ngIf="getFieldError('email')">
+            {{ getFieldError('email') }}
+          </small>
+        </div>
 
-      <!-- Submit Button -->
-      <button
-        pButton
-        type="submit"
-        label="Register"
-        [loading]="isLoading"
-        [disabled]="registerForm.invalid || isLoading"
-        class="w-full"
-      ></button>
-    </form>
+        <div class="p-field">
+          <label for="password" class="field-label">Password</label>
+          <input
+            pInputText
+            id="password"
+            type="password"
+            formControlName="password"
+            placeholder="Enter a strong password"
+            class="w-full"
+          />
+          <small class="p-error" *ngIf="getFieldError('password')">
+            {{ getFieldError('password') }}
+          </small>
+          <small class="info-text">
+            Password must be at least 8 characters with uppercase, lowercase, and number
+          </small>
+        </div>
 
-    <!-- Login Link -->
-    <ng-template pTemplate="footer">
-      <div class="text-center">
-        <p class="p-mb-0">
-          Already have an account?
-          <a routerLink="/login" class="font-bold">Login here</a>
-        </p>
-      </div>
-    </ng-template>
-  </p-card>
+        <button
+          pButton
+          type="submit"
+          [loading]="isLoading"
+          [disabled]="registerForm.invalid || isLoading"
+          class="w-full submit-button"
+        >
+          Register
+        </button>
+      </form>
+
+      <ng-template pTemplate="footer">
+        <div class="footer-text">
+          <p>Already have an account? <a routerLink="/login">Login here</a></p>
+        </div>
+      </ng-template>
+    </p-card>
+  </div>
 </div>

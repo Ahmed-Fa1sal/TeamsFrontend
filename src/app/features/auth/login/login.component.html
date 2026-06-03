@@ -1,67 +1,68 @@
-<div class="p-d-flex p-jc-center p-ai-center min-vh-100">
-  <p-card class="login-card w-30">
-    <ng-template pTemplate="header">
-      <div class="text-center">
-        <h1>Teams Login</h1>
-      </div>
-    </ng-template>
+<div class="auth-page">
+  <div class="auth-panel slide-in-up">
+    <section class="auth-panel__hero">
+      <span class="brand-chip">Teams</span>
+      <h1>Welcome Back</h1>
+      <p>Sign in to access your team's tasks, chats, and projects.</p>
+    </section>
 
-    <!-- Error Messages -->
-    <p-messages [(value)]="messages" [enableService]="false" [closable]="false" class="mb-4"></p-messages>
+    <p-card class="auth-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <h2>Login</h2>
+          <p>Enter your credentials to continue.</p>
+        </div>
+      </ng-template>
 
-    <!-- Login Form -->
-    <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="p-d-flex p-flex-column p-gap-4">
-      <!-- Email Field -->
-      <div class="p-field">
-        <label for="email" class="p-d-block p-mb-2">Email</label>
-        <input
-          pInputText
-          id="email"
-          type="email"
-          formControlName="email"
-          placeholder="Enter your email"
-          class="w-full"
-        />
-        <small class="p-error p-d-block p-mt-1" *ngIf="getFieldError('email')">
-          {{ getFieldError('email') }}
-        </small>
-      </div>
+      <p-messages [(value)]="messages" [enableService]="false" [closable]="false" class="mb-4"></p-messages>
 
-      <!-- Password Field -->
-      <div class="p-field">
-        <label for="password" class="p-d-block p-mb-2">Password</label>
-        <input
-          pInputText
-          id="password"
-          type="password"
-          formControlName="password"
-          placeholder="Enter your password"
-          class="w-full"
-        />
-        <small class="p-error p-d-block p-mt-1" *ngIf="getFieldError('password')">
-          {{ getFieldError('password') }}
-        </small>
-      </div>
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="form-grid">
+        <div class="p-field">
+          <label for="email" class="field-label">Email</label>
+          <input
+            pInputText
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="Enter your email"
+            class="w-full"
+          />
+          <small class="p-error" *ngIf="getFieldError('email')">
+            {{ getFieldError('email') }}
+          </small>
+        </div>
 
-      <!-- Submit Button -->
-      <button
-        pButton
-        type="submit"
-        label="Login"
-        [loading]="isLoading"
-        [disabled]="loginForm.invalid || isLoading"
-        class="w-full"
-      ></button>
-    </form>
+        <div class="p-field">
+          <label for="password" class="field-label">Password</label>
+          <input
+            pInputText
+            id="password"
+            type="password"
+            formControlName="password"
+            placeholder="Enter your password"
+            class="w-full"
+          />
+          <small class="p-error" *ngIf="getFieldError('password')">
+            {{ getFieldError('password') }}
+          </small>
+        </div>
 
-    <!-- Register Link -->
-    <ng-template pTemplate="footer">
-      <div class="text-center">
-        <p class="p-mb-0">
-          Don't have an account?
-          <a routerLink="/register" class="font-bold">Register here</a>
-        </p>
-      </div>
-    </ng-template>
-  </p-card>
+        <button
+          pButton
+          type="submit"
+          [loading]="isLoading"
+          [disabled]="loginForm.invalid || isLoading"
+          class="w-full submit-button"
+        >
+          Login
+        </button>
+      </form>
+
+      <ng-template pTemplate="footer">
+        <div class="footer-text">
+          <p>Don't have an account? <a routerLink="/register">Register now</a></p>
+        </div>
+      </ng-template>
+    </p-card>
+  </div>
 </div>

@@ -1,58 +1,49 @@
-<div class="p-d-flex p-flex-column" style="min-height: 100vh;">
-  <!-- Header -->
-  <div class="header p-p-4 p-d-flex p-jc-between p-ai-center">
+<div class="home-page">
+  <div class="home-header slide-in-up">
     <div>
-      <h1 class="p-mb-1">Welcome, {{ user?.firstName }}!</h1>
-      <p class="p-mb-0">You are successfully logged into Teams Application</p>
+      <h1>Team Dashboard</h1>
+      <p>Welcome back, {{ user?.firstName }}. Your session is active and ready.</p>
     </div>
     <button pButton type="button" label="Logout" (click)="onLogout()" severity="danger"></button>
   </div>
 
-  <!-- Messages -->
-  <p-messages [(value)]="messages" [enableService]="false" [closable]="false" class="p-m-3"></p-messages>
+  <p-messages [(value)]="messages" [enableService]="false" [closable]="false" class="home-messages"></p-messages>
 
-  <!-- Main Content -->
-  <div class="p-p-4 p-flex-grow-1">
-    <p-card class="welcome-card">
-      <!-- User Info Section -->
-      <div class="p-mb-4">
-        <h2 class="p-mb-3">User Information</h2>
-        <div class="p-d-grid p-col-12 p-md-6 p-lg-3 p-gap-3">
+  <div class="home-grid">
+    <p-card class="home-card">
+      <div class="card-content">
+        <h2>Your Profile</h2>
+        <div class="profile-grid">
           <div class="info-item">
-            <label class="info-label">First Name:</label>
-            <p class="p-mb-0">{{ user?.firstName }}</p>
+            <span class="info-label">First Name</span>
+            <p>{{ user?.firstName }}</p>
           </div>
           <div class="info-item">
-            <label class="info-label">Last Name:</label>
-            <p class="p-mb-0">{{ user?.lastName }}</p>
+            <span class="info-label">Last Name</span>
+            <p>{{ user?.lastName }}</p>
           </div>
           <div class="info-item">
-            <label class="info-label">Username:</label>
-            <p class="p-mb-0">{{ user?.username }}</p>
+            <span class="info-label">Username</span>
+            <p>{{ user?.username }}</p>
           </div>
           <div class="info-item">
-            <label class="info-label">Email:</label>
-            <p class="p-mb-0">{{ user?.email }}</p>
+            <span class="info-label">Email</span>
+            <p>{{ user?.email }}</p>
           </div>
         </div>
       </div>
+    </p-card>
 
-      <!-- Features Section -->
-      <div class="p-pt-4" style="border-top: 1px solid #e0e0e0;">
-        <h3 class="p-mb-3">Available Features</h3>
-        <ul class="features-list p-pl-3">
-          <li>View and manage your profile</li>
-          <li>Access team communications</li>
-          <li>Collaborate with teammates</li>
-          <li>Manage projects and tasks</li>
-          <li>View notifications and updates</li>
+    <p-card class="home-card home-card--features">
+      <div class="card-content">
+        <h2>Next steps</h2>
+        <ul class="features-list">
+          <li>Review your profile and update details</li>
+          <li>Join team conversations</li>
+          <li>Track project progress</li>
+          <li>Check your notifications</li>
         </ul>
       </div>
-
-      <!-- Footer with Logout Button -->
-      <ng-template pTemplate="footer">
-        <button pButton type="button" label="Logout" (click)="onLogout()" severity="danger" class="w-full"></button>
-      </ng-template>
     </p-card>
   </div>
 </div>
