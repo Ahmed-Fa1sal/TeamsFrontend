@@ -1,116 +1,209 @@
 <div class="auth-page">
   <div class="auth-panel slide-in-up">
-    <section class="auth-panel__hero">
-      <span class="brand-chip">Teams</span>
-      <h1>Create your account</h1>
-      <p>Join your team and start collaborating with a secure account.</p>
-    </section>
 
-    <p-card class="auth-card">
-      <ng-template pTemplate="header">
-        <div class="card-header">
-          <h2>Register</h2>
-          <p>Fill in the details below to get started.</p>
+    <!-- ── Left: brand panel ── -->
+    <aside class="brand-side">
+      <div class="brand-inner">
+        <div class="brand-mark">
+          <div class="brand-icon-wrap">T</div>
+          <span>Teams</span>
         </div>
-      </ng-template>
+        <h1 class="brand-headline">Get started<br>in minutes.</h1>
+        <p class="brand-tagline">
+          Create your free account and join your team for seamless collaboration from day one.
+        </p>
+        <ul class="perk-list">
+          <li class="perk-item">
+            <span class="perk-check" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            Free to join, no credit card
+          </li>
+          <li class="perk-item">
+            <span class="perk-check" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            Set up in under 2 minutes
+          </li>
+          <li class="perk-item">
+            <span class="perk-check" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            Invite your team instantly
+          </li>
+        </ul>
+      </div>
+    </aside>
 
-      <p-messages [(value)]="messages" [enableService]="false" [closable]="false" class="mb-4"></p-messages>
-
-      <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="form-grid">
-        <div class="p-field">
-          <label for="firstName" class="field-label">First Name</label>
-          <input
-            pInputText
-            id="firstName"
-            type="text"
-            formControlName="firstName"
-            placeholder="Enter your first name"
-            class="w-full"
-          />
-          <small class="p-error" *ngIf="getFieldError('firstName')">
-            {{ getFieldError('firstName') }}
-          </small>
-        </div>
-
-        <div class="p-field">
-          <label for="lastName" class="field-label">Last Name</label>
-          <input
-            pInputText
-            id="lastName"
-            type="text"
-            formControlName="lastName"
-            placeholder="Enter your last name"
-            class="w-full"
-          />
-          <small class="p-error" *ngIf="getFieldError('lastName')">
-            {{ getFieldError('lastName') }}
-          </small>
+    <!-- ── Right: form panel ── -->
+    <main class="form-side">
+      <div class="form-inner">
+        <div class="form-header">
+          <h2>Create your account</h2>
+          <p>Fill in the details below to get started</p>
         </div>
 
-        <div class="p-field">
-          <label for="username" class="field-label">Username</label>
-          <input
-            pInputText
-            id="username"
-            type="text"
-            formControlName="username"
-            placeholder="Choose a username"
-            class="w-full"
-          />
-          <small class="p-error" *ngIf="getFieldError('username')">
-            {{ getFieldError('username') }}
-          </small>
-        </div>
+        <p-messages *ngIf="messages.length" [(value)]="messages" [enableService]="false" [closable]="false" class="auth-messages"></p-messages>
 
-        <div class="p-field">
-          <label for="email" class="field-label">Email</label>
-          <input
-            pInputText
-            id="email"
-            type="email"
-            formControlName="email"
-            placeholder="Enter your email"
-            class="w-full"
-          />
-          <small class="p-error" *ngIf="getFieldError('email')">
-            {{ getFieldError('email') }}
-          </small>
-        </div>
+        <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="auth-form">
 
-        <div class="p-field">
-          <label for="password" class="field-label">Password</label>
-          <input
-            pInputText
-            id="password"
-            type="password"
-            formControlName="password"
-            placeholder="Enter a strong password"
-            class="w-full"
-          />
-          <small class="p-error" *ngIf="getFieldError('password')">
-            {{ getFieldError('password') }}
-          </small>
-          <small class="info-text">
-            Password must be at least 8 characters with uppercase, lowercase, and number
-          </small>
-        </div>
+          <!-- First & Last Name (two columns) -->
+          <div class="name-row">
+            <div class="field-group" [class.field-error]="getFieldError('firstName')">
+              <label for="firstName" class="field-label">First name</label>
+              <div class="input-box">
+                <span class="input-pre-icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <input
+                  pInputText
+                  id="firstName"
+                  type="text"
+                  formControlName="firstName"
+                  placeholder="Jane"
+                  autocomplete="given-name"
+                  class="auth-input"
+                />
+              </div>
+              <span class="field-hint field-hint--error" *ngIf="getFieldError('firstName')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                {{ getFieldError('firstName') }}
+              </span>
+            </div>
 
-        <button
-          pButton
-          type="submit"
-          [loading]="isLoading"
-          [disabled]="registerForm.invalid || isLoading"
-          class="w-full submit-button"
-        >
-          Register
-        </button>
-      </form>
+            <div class="field-group" [class.field-error]="getFieldError('lastName')">
+              <label for="lastName" class="field-label">Last name</label>
+              <div class="input-box">
+                <span class="input-pre-icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <input
+                  pInputText
+                  id="lastName"
+                  type="text"
+                  formControlName="lastName"
+                  placeholder="Doe"
+                  autocomplete="family-name"
+                  class="auth-input"
+                />
+              </div>
+              <span class="field-hint field-hint--error" *ngIf="getFieldError('lastName')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                {{ getFieldError('lastName') }}
+              </span>
+            </div>
+          </div>
 
-      <ng-template pTemplate="footer">
-        <div class="footer-text">
-          <p>Already have an account? <a routerLink="/login">Login here</a></p>
-        </div>
-      </ng-template>
-    </p-card>
+          <!-- Username -->
+          <div class="field-group" [class.field-error]="getFieldError('username')">
+            <label for="username" class="field-label">Username</label>
+            <div class="input-box">
+              <span class="input-pre-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg>
+              </span>
+              <input
+                pInputText
+                id="username"
+                type="text"
+                formControlName="username"
+                placeholder="janedoe"
+                autocomplete="username"
+                class="auth-input"
+              />
+            </div>
+            <span class="field-hint field-hint--error" *ngIf="getFieldError('username')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              {{ getFieldError('username') }}
+            </span>
+          </div>
+
+          <!-- Email -->
+          <div class="field-group" [class.field-error]="getFieldError('email')">
+            <label for="email" class="field-label">Email address</label>
+            <div class="input-box">
+              <span class="input-pre-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              </span>
+              <input
+                pInputText
+                id="email"
+                type="email"
+                formControlName="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                class="auth-input"
+              />
+            </div>
+            <span class="field-hint field-hint--error" *ngIf="getFieldError('email')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              {{ getFieldError('email') }}
+            </span>
+          </div>
+
+          <!-- Password -->
+          <div class="field-group" [class.field-error]="getFieldError('password')">
+            <label for="password" class="field-label">Password</label>
+            <div class="input-box">
+              <span class="input-pre-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input
+                pInputText
+                id="password"
+                [type]="showPassword ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="Min. 8 characters"
+                autocomplete="new-password"
+                class="auth-input"
+              />
+              <button
+                type="button"
+                class="pw-toggle"
+                (click)="togglePassword()"
+                [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+              >
+                <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+              </button>
+            </div>
+
+            <!-- Password strength bar -->
+            <div class="pw-strength" *ngIf="registerForm.get('password')?.value">
+              <div class="pw-bars" aria-hidden="true">
+                <span class="pw-bar" [style.background]="passwordStrength.score >= 1 ? passwordStrength.color : ''"></span>
+                <span class="pw-bar" [style.background]="passwordStrength.score >= 2 ? passwordStrength.color : ''"></span>
+                <span class="pw-bar" [style.background]="passwordStrength.score >= 3 ? passwordStrength.color : ''"></span>
+                <span class="pw-bar" [style.background]="passwordStrength.score >= 4 ? passwordStrength.color : ''"></span>
+              </div>
+              <span class="pw-label" [style.color]="passwordStrength.color">{{ passwordStrength.label }}</span>
+            </div>
+
+            <span class="field-hint field-hint--error" *ngIf="getFieldError('password')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              {{ getFieldError('password') }}
+            </span>
+            <span class="field-hint field-hint--info" *ngIf="!getFieldError('password') && !registerForm.get('password')?.value">
+              Use uppercase, lowercase, and a number
+            </span>
+          </div>
+
+          <button
+            pButton
+            type="submit"
+            label="Create account"
+            [loading]="isLoading"
+            [disabled]="registerForm.invalid || isLoading"
+            class="submit-btn"
+          ></button>
+
+        </form>
+
+        <p class="auth-switch">
+          Already have an account?
+          <a routerLink="/login">Sign in</a>
+        </p>
+      </div>
+    </main>
+
   </div>
 </div>

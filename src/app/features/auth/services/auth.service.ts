@@ -69,30 +69,32 @@ export class AuthService {
     const url = getApiUrl('/auth/login');
     return this.http.post<AuthResponse>(url, credentials).pipe(
       tap((response) => {
-        const isSuccess = response.success === true || !!response.token || !!response.user;
-        if (isSuccess) {
-          const newState: AuthState = {
-            isAuthenticated: true,
-            user:
-              response.user ||
-              ({
-                email: credentials.email,
-                firstName: credentials.email.split('@')[0],
-                lastName: '',
-                username: credentials.email.split('@')[0]
-              } as any),
-            token: response.token || null,
-            loading: false,
-            error: null
+        // tap() only runs on 2xx — a successful HTTP response IS a successful login.
+        // Extract user/token from top-level fields OR a nested `data` wrapper
+        // (ApiResponse<T> shape: { data: { token, user }, message }).
+        const payload = (response as any).data ?? response;
+        const token: string | null =
+          payload.token ?? payload.access_token ?? response.token ?? null;
+        const user: User =
+          payload.user ?? response.user ?? {
+            email: credentials.email,
+            firstName: credentials.email.split('@')[0],
+            lastName: '',
+            username: credentials.email.split('@')[0],
           };
-          this.updateAuthState(newState);
-        }
+        this.updateAuthState({
+          isAuthenticated: true,
+          user,
+          token,
+          loading: false,
+          error: null,
+        });
       }),
       catchError((error) => {
         this.updateAuthState({
           ...this.authState$.value,
           error: error.error?.message || 'Login failed',
-          loading: false
+          loading: false,
         });
         return throwError(() => error);
       })
@@ -106,30 +108,30 @@ export class AuthService {
     const url = getApiUrl('/auth/register');
     return this.http.post<AuthResponse>(url, data).pipe(
       tap((response) => {
-        const isSuccess = response.success === true || !!response.token || !!response.user;
-        if (isSuccess) {
-          const newState: AuthState = {
-            isAuthenticated: true,
-            user:
-              response.user ||
-              ({
-                email: data.email,
-                firstName: data.firstName,
-                lastName: data.lastName,
-                username: data.username
-              } as any),
-            token: response.token || null,
-            loading: false,
-            error: null
+        // tap() only runs on 2xx — same rationale as login().
+        const payload = (response as any).data ?? response;
+        const token: string | null =
+          payload.token ?? payload.access_token ?? response.token ?? null;
+        const user: User =
+          payload.user ?? response.user ?? {
+            email: data.email,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            username: data.username,
           };
-          this.updateAuthState(newState);
-        }
+        this.updateAuthState({
+          isAuthenticated: true,
+          user,
+          token,
+          loading: false,
+          error: null,
+        });
       }),
       catchError((error) => {
         this.updateAuthState({
           ...this.authState$.value,
           error: error.error?.message || 'Registration failed',
-          loading: false
+          loading: false,
         });
         return throwError(() => error);
       })
