@@ -31,7 +31,7 @@ import { AuthService } from '../services/auth.service';
     MessagesModule
   ],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.css'
+  styleUrls: ['./register.component.css']
 })
 export class RegisterComponent implements OnInit, OnDestroy {
   registerForm!: FormGroup;

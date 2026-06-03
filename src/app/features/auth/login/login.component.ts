@@ -6,7 +6,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -31,26 +31,31 @@ import { AuthService } from '../services/auth.service';
     MessagesModule
   ],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.css'
+  styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnInit, OnDestroy {
   loginForm!: FormGroup;
   isLoading = false;
   messages: any[] = [];
+  private returnUrl = '/home';
   private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.initializeForm();
   }
 
   ngOnInit(): void {
+    // Capture returnUrl if redirected by auth guard
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/home';
+
     // Redirect if already logged in
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/home']);
+      this.router.navigateByUrl(this.returnUrl);
     }
   }
 
@@ -84,9 +89,21 @@ export class LoginComponent implements OnInit, OnDestroy {
       .login(this.loginForm.value)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
+        next: (response) => {
           this.isLoading = false;
-          this.router.navigate(['/home']);
+
+          if (this.authService.isAuthenticated()) {
+            this.router.navigateByUrl(this.returnUrl);
+            return;
+          }
+
+          this.messages = [
+            {
+              severity: 'error',
+              summary: 'Login Failed',
+              detail: response?.message || 'Invalid credentials'
+            }
+          ];
         },
         error: (error) => {
           this.isLoading = false;

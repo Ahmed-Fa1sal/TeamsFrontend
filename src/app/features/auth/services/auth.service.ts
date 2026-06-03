@@ -69,19 +69,24 @@ export class AuthService {
     const url = getApiUrl('/auth/login');
     return this.http.post<AuthResponse>(url, credentials).pipe(
       tap((response) => {
-        const isSuccess = response.success === true || !!response.token || !!response.user;
+        // Normalize response shapes: support { token, user } and { code, data: { accessToken, user } }
+        const raw: any = response as any;
+        const token = raw.token || raw.accessToken || raw.data?.accessToken || null;
+        const user = raw.user || raw.data?.user || null;
+        const isSuccess = raw.success === true || !!token || !!user || raw.code === 200;
+
         if (isSuccess) {
           const newState: AuthState = {
             isAuthenticated: true,
             user:
-              response.user ||
+              user ||
               ({
                 email: credentials.email,
                 firstName: credentials.email.split('@')[0],
                 lastName: '',
                 username: credentials.email.split('@')[0]
               } as any),
-            token: response.token || null,
+            token: token || null,
             loading: false,
             error: null
           };
@@ -106,19 +111,23 @@ export class AuthService {
     const url = getApiUrl('/auth/register');
     return this.http.post<AuthResponse>(url, data).pipe(
       tap((response) => {
-        const isSuccess = response.success === true || !!response.token || !!response.user;
+        const raw: any = response as any;
+        const token = raw.token || raw.accessToken || raw.data?.accessToken || null;
+        const user = raw.user || raw.data?.user || null;
+        const isSuccess = raw.success === true || !!token || !!user || raw.code === 200;
+
         if (isSuccess) {
           const newState: AuthState = {
             isAuthenticated: true,
             user:
-              response.user ||
+              user ||
               ({
                 email: data.email,
                 firstName: data.firstName,
                 lastName: data.lastName,
                 username: data.username
               } as any),
-            token: response.token || null,
+            token: token || null,
             loading: false,
             error: null
           };

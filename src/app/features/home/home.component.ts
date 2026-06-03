@@ -22,7 +22,7 @@ import { User } from '../auth/models/auth.models';
   standalone: true,
   imports: [CommonModule, ButtonModule, CardModule, MessagesModule],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.css'
+  styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit, OnDestroy {
   user: User | null = null;
