@@ -74,7 +74,8 @@ export class AuthService {
         // (ApiResponse<T> shape: { data: { token, user }, message }).
         const payload = (response as any).data ?? response;
         const token: string | null =
-          payload.token ?? payload.access_token ?? response.token ?? null;
+          payload.accessToken ?? payload.token ?? payload.access_token ?? null;
+        const refreshToken: string | null = payload.refreshToken ?? null;
         const user: User =
           payload.user ?? response.user ?? {
             email: credentials.email,
@@ -82,10 +83,20 @@ export class AuthService {
             lastName: '',
             username: credentials.email.split('@')[0],
           };
+        if (!token) {
+          this.updateAuthState({
+            ...this.authState$.value,
+            isAuthenticated: false,
+            error: 'Login failed: no token received',
+            loading: false,
+          });
+          return;
+        }
         this.updateAuthState({
           isAuthenticated: true,
           user,
           token,
+          refreshToken,
           loading: false,
           error: null,
         });
@@ -111,7 +122,8 @@ export class AuthService {
         // tap() only runs on 2xx — same rationale as login().
         const payload = (response as any).data ?? response;
         const token: string | null =
-          payload.token ?? payload.access_token ?? response.token ?? null;
+          payload.accessToken ?? payload.token ?? payload.access_token ?? null;
+        const refreshToken: string | null = payload.refreshToken ?? null;
         const user: User =
           payload.user ?? response.user ?? {
             email: data.email,
@@ -119,10 +131,20 @@ export class AuthService {
             lastName: data.lastName,
             username: data.username,
           };
+        if (!token) {
+          this.updateAuthState({
+            ...this.authState$.value,
+            isAuthenticated: false,
+            error: 'Registration failed: no token received',
+            loading: false,
+          });
+          return;
+        }
         this.updateAuthState({
           isAuthenticated: true,
           user,
           token,
+          refreshToken,
           loading: false,
           error: null,
         });
@@ -167,8 +189,8 @@ export class AuthService {
    * Clear authentication state
    */
   private clearAuthState(): void {
-    const newState = this.getInitialState();
-    this.updateAuthState(newState);
+    localStorage.removeItem(this.STORAGE_KEY);
+    this.authState$.next(this.getInitialState());
   }
 
   /**
@@ -179,6 +201,7 @@ export class AuthService {
       isAuthenticated: false,
       user: null,
       token: null,
+      refreshToken: null,
       loading: false,
       error: null
     };
@@ -199,8 +222,10 @@ export class AuthService {
     if (savedState) {
       try {
         const state = JSON.parse(savedState) as AuthState;
-        if (state.isAuthenticated) {
+        if (state.isAuthenticated && state.token) {
           this.authState$.next(state);
+        } else {
+          localStorage.removeItem(this.STORAGE_KEY);
         }
       } catch (error) {
         console.error('Failed to load auth state from storage', error);

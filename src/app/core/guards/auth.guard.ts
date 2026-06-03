@@ -20,7 +20,7 @@ export const authGuardFn: CanActivateFn = (route, state) => {
     const authService = inject(AuthService);
     const router = inject(Router);
 
-    console.log('GUARD AUTH STATE:', authService.getCurrentAuthState());
+    console.log('Is authenticated:', authService.isAuthenticated());
 
     if (authService.isAuthenticated()) {
         return true;

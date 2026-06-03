@@ -13,7 +13,9 @@ import { ToastModule } from 'primeng/toast';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 import { RippleModule } from 'primeng/ripple';
-import { MessageService } from 'primeng/api';
+import { PopoverModule } from 'primeng/popover';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { AuthService } from '../auth/services/auth.service';
 import { User } from '../auth/models/auth.models';
@@ -74,8 +76,10 @@ interface QuickAction {
     SkeletonModule,
     TooltipModule,
     RippleModule,
+    PopoverModule,
+    ConfirmDialogModule,
   ],
-  providers: [MessageService],
+  providers: [MessageService, ConfirmationService],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
 })
@@ -193,6 +197,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private readonly authService: AuthService,
     private readonly router: Router,
     private readonly messageService: MessageService,
+    private readonly confirmationService: ConfirmationService,
   ) {}
 
   ngOnInit(): void {
@@ -271,13 +276,24 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   onLogout(): void {
-    this.isLoggingOut = true;
-    this.authService
-      .logout()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => this.router.navigate(['/login']),
-        error: () => this.router.navigate(['/login']),
-      });
+    this.confirmationService.confirm({
+      header: 'Sign out?',
+      message: 'You will be signed out of Teams.',
+      icon: 'pi pi-sign-out',
+      acceptLabel: 'Sign out',
+      rejectLabel: 'Cancel',
+      acceptButtonStyleClass: 'confirm-accept-btn',
+      rejectButtonStyleClass: 'confirm-reject-btn',
+      accept: () => {
+        this.isLoggingOut = true;
+        this.authService
+          .logout()
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => this.router.navigate(['/login']),
+            error: () => this.router.navigate(['/login']),
+          });
+      },
+    });
   }
 }
