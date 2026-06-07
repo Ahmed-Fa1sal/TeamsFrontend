@@ -1,20 +1,16 @@
-/**
- * Register Component
- * Standalone component for user registration
- */
-
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-// PrimeNG Imports
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { CardModule } from 'primeng/card';
-import { MessagesModule } from 'primeng/messages';
+import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
+import gsap from 'gsap';
 
 import { AuthService } from '../services/auth.service';
 
@@ -25,34 +21,37 @@ import { AuthService } from '../services/auth.service';
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
-    ButtonModule,
-    InputTextModule,
-    CardModule,
-    MessagesModule
+    MatButtonModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.css']
 })
-export class RegisterComponent implements OnInit, OnDestroy {
+export class RegisterComponent implements OnInit, AfterViewInit, OnDestroy {
   registerForm!: FormGroup;
   isLoading = false;
   showPassword = false;
-  messages: any[] = [];
-  private destroy$ = new Subject<void>();
+  errorMessage: string | null = null;
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
+    private readonly fb: FormBuilder,
+    private readonly authService: AuthService,
+    private readonly router: Router
   ) {
     this.initializeForm();
   }
 
   ngOnInit(): void {
-    // Redirect if already logged in
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/home']);
     }
+  }
+
+  ngAfterViewInit(): void {
+    gsap.from('.auth-panel', { y: 32, opacity: 0, duration: 0.45, ease: 'power2.out' });
   }
 
   ngOnDestroy(): void {
@@ -70,8 +69,8 @@ export class RegisterComponent implements OnInit, OnDestroy {
     if (value.length >= 8) score++;
     if (/[A-Z]/.test(value)) score++;
     if (/[a-z]/.test(value)) score++;
-    if (/[0-9]/.test(value)) score++;
-    if (/[^A-Za-z0-9]/.test(value)) score++;
+    if (/\d/.test(value)) score++;
+    if (/[^A-Za-z\d]/.test(value)) score++;
     if (score <= 1) return { score, label: 'Weak', color: '#ef4444' };
     if (score === 2) return { score, label: 'Fair', color: '#f97316' };
     if (score === 3) return { score, label: 'Good', color: '#eab308' };
@@ -96,36 +95,28 @@ export class RegisterComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Password validator - must contain uppercase, lowercase, and number
-   */
-  private passwordValidator(control: any): { [key: string]: boolean } | null {
+  private passwordValidator(control: { value: string }): { [key: string]: boolean } | null {
     const value = control.value;
-    if (!value) {
-      return null;
-    }
+    if (!value) return null;
 
     const hasUpperCase = /[A-Z]/.test(value);
     const hasLowerCase = /[a-z]/.test(value);
-    const hasNumber = /[0-9]/.test(value);
+    const hasNumber = /\d/.test(value);
 
     if (!hasUpperCase || !hasLowerCase || !hasNumber) {
       return { invalidPassword: true };
     }
-
     return null;
   }
 
-  /**
-   * Handle register form submission
-   */
   onRegister(): void {
+    this.registerForm.markAllAsTouched();
     if (this.registerForm.invalid) {
       return;
     }
 
     this.isLoading = true;
-    this.messages = [];
+    this.errorMessage = null;
 
     this.authService
       .register(this.registerForm.value)
@@ -137,20 +128,11 @@ export class RegisterComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.isLoading = false;
-          this.messages = [
-            {
-              severity: 'error',
-              summary: 'Registration Failed',
-              detail: error?.error?.message || 'An error occurred during registration'
-            }
-          ];
+          this.errorMessage = error?.error?.message || 'An error occurred during registration';
         }
       });
   }
 
-  /**
-   * Get field error message
-   */
   getFieldError(fieldName: string): string | null {
     const field = this.registerForm.get(fieldName);
     if (!field || !field.errors || !field.touched) {
@@ -166,7 +148,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
     }
 
     if (field.hasError('minlength')) {
-      return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be at least ${field.errors['minlength'].requiredLength} characters`;
+      return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be at least ${field.errors?.['minlength']?.['requiredLength']} characters`;
     }
 
     if (field.hasError('invalidPassword')) {

@@ -4,21 +4,23 @@ import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { ButtonModule } from 'primeng/button';
-import { AvatarModule } from 'primeng/avatar';
-import { BadgeModule } from 'primeng/badge';
-import { TagModule } from 'primeng/tag';
-import { DividerModule } from 'primeng/divider';
-import { ToastModule } from 'primeng/toast';
-import { SkeletonModule } from 'primeng/skeleton';
-import { TooltipModule } from 'primeng/tooltip';
-import { RippleModule } from 'primeng/ripple';
-import { PopoverModule } from 'primeng/popover';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { MessageService, ConfirmationService } from 'primeng/api';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatRippleModule } from '@angular/material/core';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
+import gsap from 'gsap';
 
 import { AuthService } from '../auth/services/auth.service';
 import { User } from '../auth/models/auth.models';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+} from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 // ── Domain interfaces (wired to real APIs when backend endpoints are ready) ──
 
@@ -67,19 +69,15 @@ interface QuickAction {
   standalone: true,
   imports: [
     CommonModule,
-    ButtonModule,
-    AvatarModule,
-    BadgeModule,
-    TagModule,
-    DividerModule,
-    ToastModule,
-    SkeletonModule,
-    TooltipModule,
-    RippleModule,
-    PopoverModule,
-    ConfirmDialogModule,
+    MatButtonModule,
+    MatDividerModule,
+    MatTooltipModule,
+    MatRippleModule,
+    MatMenuModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatProgressSpinnerModule,
   ],
-  providers: [MessageService, ConfirmationService],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
 })
@@ -185,7 +183,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     },
   ];
 
-  // ── Action label map ───────────────────────────────────────────────────────
   private readonly actionLabels: Record<string, string> = {
     'create-team': 'Create Team',
     'create-channel': 'Create Channel',
@@ -196,8 +193,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   constructor(
     private readonly authService: AuthService,
     private readonly router: Router,
-    private readonly messageService: MessageService,
-    private readonly confirmationService: ConfirmationService,
+    private readonly snackBar: MatSnackBar,
+    private readonly dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -207,6 +204,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
     this.currentUser = this.authService.getCurrentUser();
     this.isLoading = false;
+
+    setTimeout(() => {
+      gsap.from('.welcome', { y: 16, opacity: 0, duration: 0.35, ease: 'power2.out' });
+      gsap.from('.card', { y: 24, opacity: 0, duration: 0.4, stagger: 0.08, ease: 'power2.out' });
+    }, 0);
   }
 
   ngOnDestroy(): void {
@@ -249,51 +251,42 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ── Event handlers ─────────────────────────────────────────────────────────
 
   onQuickAction(id: string): void {
-    this.messageService.add({
-      severity: 'info',
-      summary: this.actionLabels[id] ?? id,
-      detail: 'This feature is coming soon.',
-      life: 3000,
-    });
+    const label = this.actionLabels[id] ?? id;
+    this.snackBar.open(`${label} — This feature is coming soon.`, 'Dismiss', { duration: 3000 });
   }
 
   onTeamOpen(team: Team): void {
-    this.messageService.add({
-      severity: 'info',
-      summary: team.name,
-      detail: 'Team page is coming soon.',
-      life: 3000,
-    });
+    this.snackBar.open(`${team.name} — Team page is coming soon.`, 'Dismiss', { duration: 3000 });
   }
 
   onChannelOpen(channel: Channel): void {
-    this.messageService.add({
-      severity: 'info',
-      summary: `#${channel.name}`,
-      detail: 'Channel page is coming soon.',
-      life: 3000,
-    });
+    this.snackBar.open(`#${channel.name} — Channel page is coming soon.`, 'Dismiss', { duration: 3000 });
   }
 
   onLogout(): void {
-    this.confirmationService.confirm({
+    const data: ConfirmDialogData = {
       header: 'Sign out?',
       message: 'You will be signed out of Teams.',
-      icon: 'pi pi-sign-out',
       acceptLabel: 'Sign out',
       rejectLabel: 'Cancel',
-      acceptButtonStyleClass: 'confirm-accept-btn',
-      rejectButtonStyleClass: 'confirm-reject-btn',
-      accept: () => {
-        this.isLoggingOut = true;
-        this.authService
-          .logout()
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: () => this.router.navigate(['/login']),
-            error: () => this.router.navigate(['/login']),
-          });
-      },
+    };
+
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      data,
+      panelClass: 'signout-dialog',
+      width: '360px',
+    });
+
+    ref.afterClosed().pipe(takeUntil(this.destroy$)).subscribe((confirmed: boolean) => {
+      if (!confirmed) return;
+      this.isLoggingOut = true;
+      this.authService
+        .logout()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => this.router.navigate(['/login']),
+          error: () => this.router.navigate(['/login']),
+        });
     });
   }
 }

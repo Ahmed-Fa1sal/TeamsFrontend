@@ -1,18 +1,13 @@
-<p-toast position="top-right"></p-toast>
-<p-confirmDialog styleClass="signout-dialog"></p-confirmDialog>
-
 <!-- ══════════════════════════════════════════════
      TOP BAR
      ══════════════════════════════════════════════ -->
 <header class="topbar">
 
-  <!-- Brand -->
   <div class="topbar__brand">
     <div class="topbar__logo" aria-hidden="true">T</div>
     <span class="topbar__product">Teams</span>
   </div>
 
-  <!-- Nav -->
   <nav class="topbar__nav" aria-label="Primary navigation">
     <span class="topbar__nav-item topbar__nav-item--active" aria-current="page">
       <i class="pi pi-th-large" aria-hidden="true"></i>
@@ -20,16 +15,16 @@
     </span>
   </nav>
 
-  <!-- Right: profile button -->
   <div class="topbar__end">
     <ng-container *ngIf="currentUser">
       <button
+        type="button"
         class="topbar__profile-btn"
-        (click)="profilePanel.toggle($event)"
+        [matMenuTriggerFor]="profileMenu"
         aria-haspopup="true"
         aria-label="User menu"
       >
-        <p-avatar [label]="userInitials" shape="circle" styleClass="topbar-av"></p-avatar>
+        <div class="av-circle av-circle--sm topbar-av" aria-hidden="true">{{ userInitials }}</div>
         <div class="topbar__user-info">
           <span class="topbar__user-name">{{ fullName }}</span>
           <span class="topbar__user-sub">{{ currentUser.username }}</span>
@@ -38,27 +33,33 @@
       </button>
     </ng-container>
 
-    <p-popover #profilePanel styleClass="profile-panel" [dismissable]="true">
-      <div class="pp-body" *ngIf="currentUser">
+    <mat-menu #profileMenu="matMenu" xPosition="before" class="profile-panel">
+      <div
+        class="pp-body"
+        *ngIf="currentUser"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+      >
         <div class="pp-user">
-          <p-avatar [label]="userInitials" shape="circle" size="large" styleClass="pp-av"></p-avatar>
+          <div class="av-circle av-circle--lg pp-av" aria-hidden="true">{{ userInitials }}</div>
           <div class="pp-user-info">
             <span class="pp-name">{{ fullName }}</span>
             <span class="pp-email">{{ currentUser.email }}</span>
           </div>
         </div>
-        <p-divider></p-divider>
+        <mat-divider></mat-divider>
         <button
-          pButton
-          pRipple
-          label="Sign out"
-          icon="pi pi-sign-out"
-          class="p-button-text pp-signout-btn"
-          [loading]="isLoggingOut"
-          (click)="profilePanel.hide(); onLogout()"
-        ></button>
+          type="button"
+          mat-menu-item
+          [disabled]="isLoggingOut"
+          (click)="onLogout()"
+          class="pp-signout-btn"
+        >
+          <i class="pi pi-sign-out" aria-hidden="true"></i>
+          <span>{{ isLoggingOut ? 'Signing out…' : 'Sign out' }}</span>
+        </button>
       </div>
-    </p-popover>
+    </mat-menu>
   </div>
 
 </header>
@@ -68,34 +69,29 @@
      ══════════════════════════════════════════════ -->
 <main class="dash-main">
 
-  <!-- ── Skeleton (loading) ───────────────────── -->
+  <!-- Skeleton (loading) -->
   <ng-container *ngIf="isLoading">
-    <p-skeleton height="8.5rem" borderRadius="1rem"></p-skeleton>
+    <div class="skeleton skeleton--hero"></div>
     <div class="sk-row">
-      <p-skeleton height="20rem" borderRadius="0.75rem"></p-skeleton>
-      <p-skeleton height="20rem" borderRadius="0.75rem"></p-skeleton>
-      <p-skeleton height="20rem" borderRadius="0.75rem"></p-skeleton>
+      <div class="skeleton skeleton--card-lg"></div>
+      <div class="skeleton skeleton--card-lg"></div>
+      <div class="skeleton skeleton--card-lg"></div>
     </div>
     <div class="sk-row">
-      <p-skeleton height="18rem" borderRadius="0.75rem"></p-skeleton>
-      <p-skeleton height="18rem" borderRadius="0.75rem"></p-skeleton>
+      <div class="skeleton skeleton--card-md"></div>
+      <div class="skeleton skeleton--card-md"></div>
     </div>
   </ng-container>
 
-  <!-- ── Dashboard (loaded) ───────────────────── -->
+  <!-- Dashboard (loaded) -->
   <ng-container *ngIf="!isLoading">
 
-    <!-- ══════════ WELCOME BANNER ══════════════ -->
+    <!-- WELCOME BANNER -->
     <section class="welcome" aria-label="Welcome summary">
       <div class="welcome__inner">
 
         <div class="welcome__left">
-          <p-avatar
-            [label]="userInitials"
-            shape="circle"
-            size="xlarge"
-            styleClass="welcome-av"
-          ></p-avatar>
+          <div class="av-circle av-circle--xl welcome-av" aria-hidden="true">{{ userInitials }}</div>
           <div class="welcome__text">
             <h1>
               {{ timeGreeting }},&nbsp;<span class="welcome__name">{{ firstName }}!</span>
@@ -107,37 +103,35 @@
           </div>
         </div>
 
-        <div class="welcome__stats" role="list" aria-label="Key metrics">
-          <div class="wstat" role="listitem">
+        <ul class="welcome__stats" aria-label="Key metrics">
+          <li class="wstat">
             <span class="wstat__val">{{ teams.length }}</span>
             <span class="wstat__lbl">Teams</span>
-          </div>
-          <span class="wstat__sep" aria-hidden="true"></span>
-          <div class="wstat" role="listitem">
+          </li>
+          <li class="wstat__sep" aria-hidden="true"></li>
+          <li class="wstat">
             <span class="wstat__val">{{ channels.length }}</span>
             <span class="wstat__lbl">Channels</span>
-          </div>
-          <span class="wstat__sep" aria-hidden="true"></span>
-          <div class="wstat" role="listitem">
+          </li>
+          <li class="wstat__sep" aria-hidden="true"></li>
+          <li class="wstat">
             <span class="wstat__val">{{ organization.memberCount }}</span>
             <span class="wstat__lbl">Members</span>
-          </div>
-          <ng-container *ngIf="totalUnread > 0">
-            <span class="wstat__sep" aria-hidden="true"></span>
-            <div class="wstat wstat--unread" role="listitem">
-              <span class="wstat__val">{{ totalUnread }}</span>
-              <span class="wstat__lbl">Unread</span>
-            </div>
-          </ng-container>
-        </div>
+          </li>
+          <li class="wstat__sep" aria-hidden="true" *ngIf="totalUnread > 0"></li>
+          <li class="wstat wstat--unread" *ngIf="totalUnread > 0">
+            <span class="wstat__val">{{ totalUnread }}</span>
+            <span class="wstat__lbl">Unread</span>
+          </li>
+        </ul>
 
       </div>
     </section>
 
-    <!-- ══════════ ROW 1 — three cards ══════════ -->
+    <!-- ROW 1: three cards -->
     <div class="dash-row3">
 
-      <!-- ── Quick Actions ──────────────────── -->
+      <!-- Quick Actions -->
       <section class="card" aria-labelledby="qa-heading">
         <div class="card__head">
           <div class="card__head-l">
@@ -146,55 +140,55 @@
           </div>
         </div>
 
-        <div class="qa-list" role="list">
-          <button
-            *ngFor="let a of quickActions"
-            pRipple
-            class="qa-item"
-            role="listitem"
-            [attr.aria-label]="a.label"
-            (click)="onQuickAction(a.id)"
-          >
-            <span
-              class="qa-item__icon"
-              aria-hidden="true"
-              [ngStyle]="{ background: a.bgColor, color: a.color }"
-            ><i [class]="a.icon"></i></span>
-            <span class="qa-item__text">
-              <span class="qa-item__label">{{ a.label }}</span>
-              <span class="qa-item__desc">{{ a.description }}</span>
-            </span>
-            <i class="pi pi-chevron-right qa-item__arrow" aria-hidden="true"></i>
-          </button>
-        </div>
+        <ul class="qa-list">
+          <li *ngFor="let a of quickActions">
+            <button
+              type="button"
+              matRipple
+              class="qa-item"
+              [attr.aria-label]="a.label"
+              (click)="onQuickAction(a.id)"
+            >
+              <span
+                class="qa-item__icon"
+                aria-hidden="true"
+                [ngStyle]="{ background: a.bgColor, color: a.color }"
+              ><i [class]="a.icon"></i></span>
+              <span class="qa-item__text">
+                <span class="qa-item__label">{{ a.label }}</span>
+                <span class="qa-item__desc">{{ a.description }}</span>
+              </span>
+              <i class="pi pi-chevron-right qa-item__arrow" aria-hidden="true"></i>
+            </button>
+          </li>
+        </ul>
       </section>
 
-      <!-- ── Organization ───────────────────── -->
+      <!-- Organization -->
       <section class="card" aria-labelledby="org-heading">
         <div class="card__head">
           <div class="card__head-l">
             <span class="card__icon card__icon--gray"><i class="pi pi-building" aria-hidden="true"></i></span>
             <h2 class="card__title" id="org-heading">Organization</h2>
           </div>
-          <p-tag [value]="organization.plan" severity="success" styleClass="plan-tag"></p-tag>
+          <span class="plan-tag">{{ organization.plan }}</span>
         </div>
 
         <div class="org-body">
 
           <div class="org-id">
-            <p-avatar
-              [label]="organization.name.charAt(0)"
-              shape="circle"
-              size="large"
-              [style]="{ background: '#5b5fc7', color: '#fff', 'font-weight': '700' }"
-            ></p-avatar>
+            <div
+              class="av-circle av-circle--lg"
+              aria-hidden="true"
+              [ngStyle]="{ background: '#5b5fc7', color: '#fff', 'font-weight': '700' }"
+            >{{ organization.name.charAt(0) }}</div>
             <div>
               <h3 class="org-name">{{ organization.name }}</h3>
               <span class="org-domain">{{ organization.domain }}</span>
             </div>
           </div>
 
-          <p-divider></p-divider>
+          <mat-divider></mat-divider>
 
           <div class="org-stats">
             <div class="org-stat">
@@ -213,21 +207,22 @@
             </div>
           </div>
 
-          <p-divider></p-divider>
+          <mat-divider></mat-divider>
 
           <button
-            pButton
-            pRipple
-            label="Manage Organization"
-            icon="pi pi-cog"
-            class="p-button-outlined p-button-sm manage-btn"
+            type="button"
+            mat-stroked-button
+            class="manage-btn"
             (click)="onQuickAction('manage-org')"
-          ></button>
+          >
+            <i class="pi pi-cog" aria-hidden="true"></i>
+            Manage Organization
+          </button>
 
         </div>
       </section>
 
-      <!-- ── Coming Soon ────────────────────── -->
+      <!-- Coming Soon -->
       <section class="card card--muted" aria-labelledby="cs-heading">
         <div class="card__head">
           <div class="card__head-l">
@@ -251,12 +246,11 @@
       </section>
 
     </div>
-    <!-- /ROW 1 -->
 
-    <!-- ══════════ ROW 2 — two cards ════════════ -->
+    <!-- ROW 2: two cards -->
     <div class="dash-row2">
 
-      <!-- ── My Teams ───────────────────────── -->
+      <!-- My Teams -->
       <section class="card" aria-labelledby="teams-heading">
         <div class="card__head">
           <div class="card__head-l">
@@ -264,38 +258,34 @@
             <h2 class="card__title" id="teams-heading">My Teams</h2>
           </div>
           <button
-            pButton pRipple
-            label="New Team" icon="pi pi-plus"
-            class="p-button-text p-button-sm head-action-btn"
+            type="button"
+            mat-button
+            class="head-action-btn"
             (click)="onQuickAction('create-team')"
-          ></button>
+          >
+            <i class="pi pi-plus" aria-hidden="true"></i> New Team
+          </button>
         </div>
 
-        <div class="teams-list" role="list">
-          <div
+        <ul class="teams-list">
+          <li
             *ngFor="let team of teams"
             class="team-row"
-            role="listitem"
             tabindex="0"
             [attr.aria-label]="team.name + ' — ' + team.description"
             (click)="onTeamOpen(team)"
             (keydown.enter)="onTeamOpen(team)"
           >
-            <p-avatar
-              [label]="team.avatarLabel"
-              shape="circle"
-              [style]="{ background: team.avatarColor, color: '#fff', 'font-weight': '700', 'font-size': '0.75rem', 'flex-shrink': '0' }"
-            ></p-avatar>
+            <div
+              class="av-circle av-circle--md"
+              aria-hidden="true"
+              [ngStyle]="{ background: team.avatarColor, color: '#fff', 'font-weight': '700', 'font-size': '0.75rem', 'flex-shrink': '0' }"
+            >{{ team.avatarLabel }}</div>
 
             <div class="team-row__info">
               <div class="team-row__top">
                 <span class="team-row__name">{{ team.name }}</span>
-                <p-tag
-                  *ngIf="team.isOwner"
-                  value="Owner"
-                  severity="info"
-                  styleClass="owner-tag"
-                ></p-tag>
+                <span *ngIf="team.isOwner" class="owner-tag">Owner</span>
               </div>
               <span class="team-row__meta">
                 {{ team.memberCount }} members&nbsp;·&nbsp;{{ team.channelCount }} channels
@@ -303,19 +293,21 @@
             </div>
 
             <button
-              pButton
-              icon="pi pi-arrow-right"
-              class="p-button-text p-button-sm p-button-rounded team-open-btn"
-              pTooltip="Open team"
-              tooltipPosition="left"
+              type="button"
+              mat-icon-button
+              [matTooltip]="'Open team'"
+              matTooltipPosition="left"
               aria-label="Open team"
               (click)="$event.stopPropagation(); onTeamOpen(team)"
-            ></button>
-          </div>
-        </div>
+              class="team-open-btn"
+            >
+              <i class="pi pi-arrow-right" aria-hidden="true"></i>
+            </button>
+          </li>
+        </ul>
       </section>
 
-      <!-- ── Recent Channels ────────────────── -->
+      <!-- Recent Channels -->
       <section class="card" aria-labelledby="ch-heading">
         <div class="card__head">
           <div class="card__head-l">
@@ -323,18 +315,19 @@
             <h2 class="card__title" id="ch-heading">Recent Channels</h2>
           </div>
           <button
-            pButton pRipple
-            label="New Channel" icon="pi pi-plus"
-            class="p-button-text p-button-sm head-action-btn"
+            type="button"
+            mat-button
+            class="head-action-btn"
             (click)="onQuickAction('create-channel')"
-          ></button>
+          >
+            <i class="pi pi-plus" aria-hidden="true"></i> New Channel
+          </button>
         </div>
 
-        <div class="ch-list" role="list">
-          <div
+        <ul class="ch-list">
+          <li
             *ngFor="let ch of channels"
             class="ch-row"
-            role="listitem"
             tabindex="0"
             [attr.aria-label]="(ch.isPrivate ? 'Private channel ' : 'Channel ') + ch.name + ' in ' + ch.teamName"
             (click)="onChannelOpen(ch)"
@@ -354,12 +347,11 @@
                   class="ch-row__name"
                   [class.ch-row__name--unread]="ch.unreadCount > 0"
                 >{{ ch.name }}</span>
-                <p-badge
+                <span
                   *ngIf="ch.unreadCount > 0"
-                  [value]="ch.unreadCount > 99 ? '99+' : ch.unreadCount.toString()"
-                  severity="danger"
-                  styleClass="ch-badge"
-                ></p-badge>
+                  class="ch-badge"
+                  [attr.aria-label]="ch.unreadCount + ' unread messages'"
+                >{{ ch.unreadCount > 99 ? '99+' : ch.unreadCount }}</span>
               </div>
               <div class="ch-row__meta">
                 <span
@@ -371,14 +363,12 @@
               </div>
             </div>
 
-          </div>
-        </div>
+          </li>
+        </ul>
       </section>
 
     </div>
-    <!-- /ROW 2 -->
 
   </ng-container>
-  <!-- /loaded -->
 
 </main>

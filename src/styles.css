@@ -66,7 +66,7 @@ app-root {
   padding: 1.5rem;
 }
 
-/* PrimeNG Theme Customizations */
+/* Scrollbar */
 
 ::-webkit-scrollbar {
   width: 8px;
@@ -92,8 +92,7 @@ input[type="text"],
 input[type="email"],
 input[type="password"],
 textarea,
-select,
-.p-inputtext {
+select {
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
   width: 100%;
   padding: 0.95rem 1rem;
@@ -108,87 +107,17 @@ input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus,
 textarea:focus,
-select:focus,
-.p-inputtext:focus {
+select:focus {
   outline: none;
   border-color: #4338ca !important;
   box-shadow: 0 0 0 4px rgba(67, 56, 202, 0.12);
 }
 
-/* Buttons */
-
-button,
-.p-button {
-  cursor: pointer;
-  transition: all 0.25s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  height: 3rem;
-  padding: 0 1.5rem;
-  border-radius: 999px;
-  border: none;
-  background-color: #4338ca;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-button:disabled,
-.p-button:disabled {
-  background-color: #a5b4fc;
-  cursor: not-allowed;
-  opacity: 0.75;
-}
-
-/* Card fallback styling */
-
-.p-card {
-  background: #ffffff;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 1rem;
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
-}
-
-.p-card-header,
-.p-card-body,
-.p-card-footer {
-  padding: 1.25rem;
-}
-
-.p-card-header {
-  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-}
-
-.p-card-footer {
-  border-top: 1px solid rgba(148, 163, 184, 0.15);
-}
-
-/* Messages styling */
-
-.p-messages {
-  background: #f8f9ff;
-  border: 1px solid #c7d2fe;
-  border-radius: 0.85rem;
-  padding: 1rem;
-}
-
-.p-message {
-  margin: 0;
-}
-
-.p-message .p-message-summary {
-  font-weight: 700;
-}
-
-.p-message .p-message-detail {
-  color: #334155;
-}
+/* Buttons — minimal reset; component stylesheets own the rest */
 
 button {
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
 }
 
 /* Links */
@@ -215,36 +144,6 @@ a:hover {
   html, body {
     font-size: 12px;
   }
-}
-
-/* Animation Classes */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideInUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.3s ease-in;
-}
-
-.slide-in-up {
-  animation: slideInUp 0.3s ease-out;
 }
 
 /* Accessibility */
