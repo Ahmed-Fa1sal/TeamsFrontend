@@ -1,49 +1,384 @@
-<div class="home-page">
-  <div class="home-header slide-in-up">
-    <div>
-      <h1>Team Dashboard</h1>
-      <p>Welcome back, {{ user?.firstName }}. Your session is active and ready.</p>
-    </div>
-    <button pButton type="button" label="Logout" (click)="onLogout()" severity="danger"></button>
+<p-toast position="top-right"></p-toast>
+<p-confirmDialog styleClass="signout-dialog"></p-confirmDialog>
+
+<!-- ══════════════════════════════════════════════
+     TOP BAR
+     ══════════════════════════════════════════════ -->
+<header class="topbar">
+
+  <!-- Brand -->
+  <div class="topbar__brand">
+    <div class="topbar__logo" aria-hidden="true">T</div>
+    <span class="topbar__product">Teams</span>
   </div>
 
-  <p-messages [(value)]="messages" [enableService]="false" [closable]="false" class="home-messages"></p-messages>
+  <!-- Nav -->
+  <nav class="topbar__nav" aria-label="Primary navigation">
+    <span class="topbar__nav-item topbar__nav-item--active" aria-current="page">
+      <i class="pi pi-th-large" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Dashboard</span>
+    </span>
+  </nav>
 
-  <div class="home-grid">
-    <p-card class="home-card">
-      <div class="card-content">
-        <h2>Your Profile</h2>
-        <div class="profile-grid">
-          <div class="info-item">
-            <span class="info-label">First Name</span>
-            <p>{{ user?.firstName }}</p>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Last Name</span>
-            <p>{{ user?.lastName }}</p>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Username</span>
-            <p>{{ user?.username }}</p>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Email</span>
-            <p>{{ user?.email }}</p>
+  <!-- Right: profile button -->
+  <div class="topbar__end">
+    <ng-container *ngIf="currentUser">
+      <button
+        class="topbar__profile-btn"
+        (click)="profilePanel.toggle($event)"
+        aria-haspopup="true"
+        aria-label="User menu"
+      >
+        <p-avatar [label]="userInitials" shape="circle" styleClass="topbar-av"></p-avatar>
+        <div class="topbar__user-info">
+          <span class="topbar__user-name">{{ fullName }}</span>
+          <span class="topbar__user-sub">{{ currentUser.username }}</span>
+        </div>
+        <i class="pi pi-chevron-down topbar__caret" aria-hidden="true"></i>
+      </button>
+    </ng-container>
+
+    <p-popover #profilePanel styleClass="profile-panel" [dismissable]="true">
+      <div class="pp-body" *ngIf="currentUser">
+        <div class="pp-user">
+          <p-avatar [label]="userInitials" shape="circle" size="large" styleClass="pp-av"></p-avatar>
+          <div class="pp-user-info">
+            <span class="pp-name">{{ fullName }}</span>
+            <span class="pp-email">{{ currentUser.email }}</span>
           </div>
         </div>
+        <p-divider></p-divider>
+        <button
+          pButton
+          pRipple
+          label="Sign out"
+          icon="pi pi-sign-out"
+          class="p-button-text pp-signout-btn"
+          [loading]="isLoggingOut"
+          (click)="profilePanel.hide(); onLogout()"
+        ></button>
       </div>
-    </p-card>
-
-    <p-card class="home-card home-card--features">
-      <div class="card-content">
-        <h2>Next steps</h2>
-        <ul class="features-list">
-          <li>Review your profile and update details</li>
-          <li>Join team conversations</li>
-          <li>Track project progress</li>
-          <li>Check your notifications</li>
-        </ul>
-      </div>
-    </p-card>
+    </p-popover>
   </div>
-</div>
+
+</header>
+
+<!-- ══════════════════════════════════════════════
+     MAIN
+     ══════════════════════════════════════════════ -->
+<main class="dash-main">
+
+  <!-- ── Skeleton (loading) ───────────────────── -->
+  <ng-container *ngIf="isLoading">
+    <p-skeleton height="8.5rem" borderRadius="1rem"></p-skeleton>
+    <div class="sk-row">
+      <p-skeleton height="20rem" borderRadius="0.75rem"></p-skeleton>
+      <p-skeleton height="20rem" borderRadius="0.75rem"></p-skeleton>
+      <p-skeleton height="20rem" borderRadius="0.75rem"></p-skeleton>
+    </div>
+    <div class="sk-row">
+      <p-skeleton height="18rem" borderRadius="0.75rem"></p-skeleton>
+      <p-skeleton height="18rem" borderRadius="0.75rem"></p-skeleton>
+    </div>
+  </ng-container>
+
+  <!-- ── Dashboard (loaded) ───────────────────── -->
+  <ng-container *ngIf="!isLoading">
+
+    <!-- ══════════ WELCOME BANNER ══════════════ -->
+    <section class="welcome" aria-label="Welcome summary">
+      <div class="welcome__inner">
+
+        <div class="welcome__left">
+          <p-avatar
+            [label]="userInitials"
+            shape="circle"
+            size="xlarge"
+            styleClass="welcome-av"
+          ></p-avatar>
+          <div class="welcome__text">
+            <h1>
+              {{ timeGreeting }},&nbsp;<span class="welcome__name">{{ firstName }}!</span>
+            </h1>
+            <p>
+              Welcome to <strong>{{ organization.name }}</strong>
+              <span class="welcome__plan">{{ organization.plan }}</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="welcome__stats" role="list" aria-label="Key metrics">
+          <div class="wstat" role="listitem">
+            <span class="wstat__val">{{ teams.length }}</span>
+            <span class="wstat__lbl">Teams</span>
+          </div>
+          <span class="wstat__sep" aria-hidden="true"></span>
+          <div class="wstat" role="listitem">
+            <span class="wstat__val">{{ channels.length }}</span>
+            <span class="wstat__lbl">Channels</span>
+          </div>
+          <span class="wstat__sep" aria-hidden="true"></span>
+          <div class="wstat" role="listitem">
+            <span class="wstat__val">{{ organization.memberCount }}</span>
+            <span class="wstat__lbl">Members</span>
+          </div>
+          <ng-container *ngIf="totalUnread > 0">
+            <span class="wstat__sep" aria-hidden="true"></span>
+            <div class="wstat wstat--unread" role="listitem">
+              <span class="wstat__val">{{ totalUnread }}</span>
+              <span class="wstat__lbl">Unread</span>
+            </div>
+          </ng-container>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════ ROW 1 — three cards ══════════ -->
+    <div class="dash-row3">
+
+      <!-- ── Quick Actions ──────────────────── -->
+      <section class="card" aria-labelledby="qa-heading">
+        <div class="card__head">
+          <div class="card__head-l">
+            <span class="card__icon card__icon--purple"><i class="pi pi-bolt" aria-hidden="true"></i></span>
+            <h2 class="card__title" id="qa-heading">Quick Actions</h2>
+          </div>
+        </div>
+
+        <div class="qa-list" role="list">
+          <button
+            *ngFor="let a of quickActions"
+            pRipple
+            class="qa-item"
+            role="listitem"
+            [attr.aria-label]="a.label"
+            (click)="onQuickAction(a.id)"
+          >
+            <span
+              class="qa-item__icon"
+              aria-hidden="true"
+              [ngStyle]="{ background: a.bgColor, color: a.color }"
+            ><i [class]="a.icon"></i></span>
+            <span class="qa-item__text">
+              <span class="qa-item__label">{{ a.label }}</span>
+              <span class="qa-item__desc">{{ a.description }}</span>
+            </span>
+            <i class="pi pi-chevron-right qa-item__arrow" aria-hidden="true"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- ── Organization ───────────────────── -->
+      <section class="card" aria-labelledby="org-heading">
+        <div class="card__head">
+          <div class="card__head-l">
+            <span class="card__icon card__icon--gray"><i class="pi pi-building" aria-hidden="true"></i></span>
+            <h2 class="card__title" id="org-heading">Organization</h2>
+          </div>
+          <p-tag [value]="organization.plan" severity="success" styleClass="plan-tag"></p-tag>
+        </div>
+
+        <div class="org-body">
+
+          <div class="org-id">
+            <p-avatar
+              [label]="organization.name.charAt(0)"
+              shape="circle"
+              size="large"
+              [style]="{ background: '#5b5fc7', color: '#fff', 'font-weight': '700' }"
+            ></p-avatar>
+            <div>
+              <h3 class="org-name">{{ organization.name }}</h3>
+              <span class="org-domain">{{ organization.domain }}</span>
+            </div>
+          </div>
+
+          <p-divider></p-divider>
+
+          <div class="org-stats">
+            <div class="org-stat">
+              <span class="org-stat__icon"><i class="pi pi-users" aria-hidden="true"></i></span>
+              <div>
+                <span class="org-stat__val">{{ organization.memberCount }}</span>
+                <span class="org-stat__lbl">Members</span>
+              </div>
+            </div>
+            <div class="org-stat">
+              <span class="org-stat__icon"><i class="pi pi-sitemap" aria-hidden="true"></i></span>
+              <div>
+                <span class="org-stat__val">{{ organization.teamCount }}</span>
+                <span class="org-stat__lbl">Teams</span>
+              </div>
+            </div>
+          </div>
+
+          <p-divider></p-divider>
+
+          <button
+            pButton
+            pRipple
+            label="Manage Organization"
+            icon="pi pi-cog"
+            class="p-button-outlined p-button-sm manage-btn"
+            (click)="onQuickAction('manage-org')"
+          ></button>
+
+        </div>
+      </section>
+
+      <!-- ── Coming Soon ────────────────────── -->
+      <section class="card card--muted" aria-labelledby="cs-heading">
+        <div class="card__head">
+          <div class="card__head-l">
+            <span class="card__icon card__icon--soft"><i class="pi pi-sparkles" aria-hidden="true"></i></span>
+            <h2 class="card__title" id="cs-heading">Coming Soon</h2>
+          </div>
+        </div>
+
+        <div class="cs-list">
+          <div *ngFor="let item of comingSoon" class="cs-item">
+            <div class="cs-item__icon" aria-hidden="true">
+              <i [class]="item.icon"></i>
+            </div>
+            <div class="cs-item__text">
+              <span class="cs-item__label">{{ item.label }}</span>
+              <span class="cs-item__desc">{{ item.description }}</span>
+            </div>
+            <span class="cs-soon" aria-label="Coming soon">Soon</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+    <!-- /ROW 1 -->
+
+    <!-- ══════════ ROW 2 — two cards ════════════ -->
+    <div class="dash-row2">
+
+      <!-- ── My Teams ───────────────────────── -->
+      <section class="card" aria-labelledby="teams-heading">
+        <div class="card__head">
+          <div class="card__head-l">
+            <span class="card__icon card__icon--purple"><i class="pi pi-users" aria-hidden="true"></i></span>
+            <h2 class="card__title" id="teams-heading">My Teams</h2>
+          </div>
+          <button
+            pButton pRipple
+            label="New Team" icon="pi pi-plus"
+            class="p-button-text p-button-sm head-action-btn"
+            (click)="onQuickAction('create-team')"
+          ></button>
+        </div>
+
+        <div class="teams-list" role="list">
+          <div
+            *ngFor="let team of teams"
+            class="team-row"
+            role="listitem"
+            tabindex="0"
+            [attr.aria-label]="team.name + ' — ' + team.description"
+            (click)="onTeamOpen(team)"
+            (keydown.enter)="onTeamOpen(team)"
+          >
+            <p-avatar
+              [label]="team.avatarLabel"
+              shape="circle"
+              [style]="{ background: team.avatarColor, color: '#fff', 'font-weight': '700', 'font-size': '0.75rem', 'flex-shrink': '0' }"
+            ></p-avatar>
+
+            <div class="team-row__info">
+              <div class="team-row__top">
+                <span class="team-row__name">{{ team.name }}</span>
+                <p-tag
+                  *ngIf="team.isOwner"
+                  value="Owner"
+                  severity="info"
+                  styleClass="owner-tag"
+                ></p-tag>
+              </div>
+              <span class="team-row__meta">
+                {{ team.memberCount }} members&nbsp;·&nbsp;{{ team.channelCount }} channels
+              </span>
+            </div>
+
+            <button
+              pButton
+              icon="pi pi-arrow-right"
+              class="p-button-text p-button-sm p-button-rounded team-open-btn"
+              pTooltip="Open team"
+              tooltipPosition="left"
+              aria-label="Open team"
+              (click)="$event.stopPropagation(); onTeamOpen(team)"
+            ></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Recent Channels ────────────────── -->
+      <section class="card" aria-labelledby="ch-heading">
+        <div class="card__head">
+          <div class="card__head-l">
+            <span class="card__icon card__icon--purple"><i class="pi pi-hashtag" aria-hidden="true"></i></span>
+            <h2 class="card__title" id="ch-heading">Recent Channels</h2>
+          </div>
+          <button
+            pButton pRipple
+            label="New Channel" icon="pi pi-plus"
+            class="p-button-text p-button-sm head-action-btn"
+            (click)="onQuickAction('create-channel')"
+          ></button>
+        </div>
+
+        <div class="ch-list" role="list">
+          <div
+            *ngFor="let ch of channels"
+            class="ch-row"
+            role="listitem"
+            tabindex="0"
+            [attr.aria-label]="(ch.isPrivate ? 'Private channel ' : 'Channel ') + ch.name + ' in ' + ch.teamName"
+            (click)="onChannelOpen(ch)"
+            (keydown.enter)="onChannelOpen(ch)"
+          >
+            <div
+              class="ch-row__icon"
+              aria-hidden="true"
+              [ngStyle]="{ background: ch.teamColor + '1a', color: ch.teamColor }"
+            >
+              <i [class]="ch.isPrivate ? 'pi pi-lock' : 'pi pi-hashtag'"></i>
+            </div>
+
+            <div class="ch-row__info">
+              <div class="ch-row__top">
+                <span
+                  class="ch-row__name"
+                  [class.ch-row__name--unread]="ch.unreadCount > 0"
+                >{{ ch.name }}</span>
+                <p-badge
+                  *ngIf="ch.unreadCount > 0"
+                  [value]="ch.unreadCount > 99 ? '99+' : ch.unreadCount.toString()"
+                  severity="danger"
+                  styleClass="ch-badge"
+                ></p-badge>
+              </div>
+              <div class="ch-row__meta">
+                <span
+                  class="ch-dot"
+                  aria-hidden="true"
+                  [ngStyle]="{ background: ch.teamColor }"
+                ></span>
+                {{ ch.teamName }}&nbsp;·&nbsp;{{ ch.memberCount }} members
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </div>
+    <!-- /ROW 2 -->
+
+  </ng-container>
+  <!-- /loaded -->
+
+</main>

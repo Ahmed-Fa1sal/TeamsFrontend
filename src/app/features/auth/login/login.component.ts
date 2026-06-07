@@ -36,6 +36,7 @@ import { AuthService } from '../services/auth.service';
 export class LoginComponent implements OnInit, OnDestroy {
   loginForm!: FormGroup;
   isLoading = false;
+  showPassword = false;
   messages: any[] = [];
   private returnUrl = '/home';
   private destroy$ = new Subject<void>();
@@ -64,9 +65,10 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /**
-   * Initialize login form
-   */
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
+
   private initializeForm(): void {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],

@@ -1,68 +1,124 @@
 <div class="auth-page">
   <div class="auth-panel slide-in-up">
-    <section class="auth-panel__hero">
-      <span class="brand-chip">Teams</span>
-      <h1>Welcome Back</h1>
-      <p>Sign in to access your team's tasks, chats, and projects.</p>
-    </section>
 
-    <p-card class="auth-card">
-      <ng-template pTemplate="header">
-        <div class="card-header">
-          <h2>Login</h2>
-          <p>Enter your credentials to continue.</p>
+    <!-- ── Left: brand panel ── -->
+    <aside class="brand-side">
+      <div class="brand-inner">
+        <div class="brand-mark">
+          <div class="brand-icon-wrap">T</div>
+          <span>Teams</span>
         </div>
-      </ng-template>
+        <h1 class="brand-headline">Collaborate<br>smarter,<br>together.</h1>
+        <p class="brand-tagline">
+          Your team's hub for tasks, real-time messaging, and projects — all in one place.
+        </p>
+        <ul class="perk-list">
+          <li class="perk-item">
+            <span class="perk-check" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            Real-time team collaboration
+          </li>
+          <li class="perk-item">
+            <span class="perk-check" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            End-to-end secure messaging
+          </li>
+          <li class="perk-item">
+            <span class="perk-check" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            Integrated task management
+          </li>
+        </ul>
+      </div>
+    </aside>
 
-      <p-messages [(value)]="messages" [enableService]="false" [closable]="false" class="mb-4"></p-messages>
-
-      <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="form-grid">
-        <div class="p-field">
-          <label for="email" class="field-label">Email</label>
-          <input
-            pInputText
-            id="email"
-            type="email"
-            formControlName="email"
-            placeholder="Enter your email"
-            class="w-full"
-          />
-          <small class="p-error" *ngIf="getFieldError('email')">
-            {{ getFieldError('email') }}
-          </small>
-        </div>
-
-        <div class="p-field">
-          <label for="password" class="field-label">Password</label>
-          <input
-            pInputText
-            id="password"
-            type="password"
-            formControlName="password"
-            placeholder="Enter your password"
-            class="w-full"
-          />
-          <small class="p-error" *ngIf="getFieldError('password')">
-            {{ getFieldError('password') }}
-          </small>
+    <!-- ── Right: form panel ── -->
+    <main class="form-side">
+      <div class="form-inner">
+        <div class="form-header">
+          <h2>Welcome back</h2>
+          <p>Sign in to your account to continue</p>
         </div>
 
-        <button
-          pButton
-          type="submit"
-          [loading]="isLoading"
-          [disabled]="loginForm.invalid || isLoading"
-          class="w-full submit-button"
-        >
-          Login
-        </button>
-      </form>
+        <p-messages *ngIf="messages.length" [(value)]="messages" [enableService]="false" [closable]="false" class="auth-messages"></p-messages>
 
-      <ng-template pTemplate="footer">
-        <div class="footer-text">
-          <p>Don't have an account? <a routerLink="/register">Register now</a></p>
-        </div>
-      </ng-template>
-    </p-card>
+        <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="auth-form">
+
+          <!-- Email -->
+          <div class="field-group" [class.field-error]="getFieldError('email')">
+            <label for="email" class="field-label">Email address</label>
+            <div class="input-box">
+              <span class="input-pre-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              </span>
+              <input
+                pInputText
+                id="email"
+                type="email"
+                formControlName="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                class="auth-input"
+              />
+            </div>
+            <span class="field-hint field-hint--error" *ngIf="getFieldError('email')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              {{ getFieldError('email') }}
+            </span>
+          </div>
+
+          <!-- Password -->
+          <div class="field-group" [class.field-error]="getFieldError('password')">
+            <label for="password" class="field-label">Password</label>
+            <div class="input-box">
+              <span class="input-pre-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input
+                pInputText
+                id="password"
+                [type]="showPassword ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                class="auth-input"
+              />
+              <button
+                type="button"
+                class="pw-toggle"
+                (click)="togglePassword()"
+                [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+              >
+                <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+              </button>
+            </div>
+            <span class="field-hint field-hint--error" *ngIf="getFieldError('password')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              {{ getFieldError('password') }}
+            </span>
+          </div>
+
+          <button
+            pButton
+            type="submit"
+            label="Sign in"
+            [loading]="isLoading"
+            [disabled]="loginForm.invalid || isLoading"
+            class="submit-btn"
+          ></button>
+
+        </form>
+
+        <p class="auth-switch">
+          Don't have an account?
+          <a routerLink="/register">Create one free</a>
+        </p>
+      </div>
+    </main>
+
   </div>
 </div>

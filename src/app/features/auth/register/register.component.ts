@@ -36,6 +36,7 @@ import { AuthService } from '../services/auth.service';
 export class RegisterComponent implements OnInit, OnDestroy {
   registerForm!: FormGroup;
   isLoading = false;
+  showPassword = false;
   messages: any[] = [];
   private destroy$ = new Subject<void>();
 
@@ -59,9 +60,25 @@ export class RegisterComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /**
-   * Initialize register form
-   */
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  get passwordStrength(): { score: number; label: string; color: string } {
+    const value = this.registerForm?.get('password')?.value || '';
+    let score = 0;
+    if (value.length >= 8) score++;
+    if (/[A-Z]/.test(value)) score++;
+    if (/[a-z]/.test(value)) score++;
+    if (/[0-9]/.test(value)) score++;
+    if (/[^A-Za-z0-9]/.test(value)) score++;
+    if (score <= 1) return { score, label: 'Weak', color: '#ef4444' };
+    if (score === 2) return { score, label: 'Fair', color: '#f97316' };
+    if (score === 3) return { score, label: 'Good', color: '#eab308' };
+    if (score === 4) return { score, label: 'Strong', color: '#22c55e' };
+    return { score, label: 'Very strong', color: '#16a34a' };
+  }
+
   private initializeForm(): void {
     this.registerForm = this.fb.group({
       firstName: ['', [Validators.required]],
