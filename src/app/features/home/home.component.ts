@@ -263,6 +263,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.snackBar.open(`#${channel.name} — Channel page is coming soon.`, 'Dismiss', { duration: 3000 });
   }
 
+  onNavigate(path: string): void {
+    this.router.navigate([path]);
+  }
+
   onLogout(): void {
     const data: ConfirmDialogData = {
       header: 'Sign out?',

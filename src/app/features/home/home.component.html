@@ -11,8 +11,16 @@
   <nav class="topbar__nav" aria-label="Primary navigation">
     <span class="topbar__nav-item topbar__nav-item--active" aria-current="page">
       <i class="pi pi-th-large" aria-hidden="true"></i>
-      <span class="topbar__nav-label">Dashboard</span>
+      <span class="topbar__nav-label">Home</span>
     </span>
+    <button type="button" class="topbar__nav-item topbar__nav-btn" (click)="onNavigate('/dashboard')">
+      <i class="pi pi-chart-bar" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Analytics</span>
+    </button>
+    <button type="button" class="topbar__nav-item topbar__nav-btn" (click)="onNavigate('/profile')">
+      <i class="pi pi-user" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Profile</span>
+    </button>
   </nav>
 
   <div class="topbar__end">
@@ -47,6 +55,15 @@
             <span class="pp-email">{{ currentUser.email }}</span>
           </div>
         </div>
+        <mat-divider></mat-divider>
+        <button type="button" mat-menu-item (click)="onNavigate('/profile')" class="pp-action-btn">
+          <i class="pi pi-user" aria-hidden="true"></i>
+          <span>My Profile</span>
+        </button>
+        <button type="button" mat-menu-item (click)="onNavigate('/dashboard')" class="pp-action-btn">
+          <i class="pi pi-chart-bar" aria-hidden="true"></i>
+          <span>Analytics</span>
+        </button>
         <mat-divider></mat-divider>
         <button
           type="button"

@@ -94,6 +94,22 @@
   color: #fff;
 }
 
+.topbar__nav-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.14s;
+}
+
+.topbar__nav-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.topbar__nav-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: -2px;
+}
+
 .topbar__end {
   display: flex;
   align-items: center;
@@ -232,6 +248,13 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Menu action items */
+.pp-action-btn {
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  gap: 0.5rem;
 }
 
 /* Sign-out mat-menu-item */
