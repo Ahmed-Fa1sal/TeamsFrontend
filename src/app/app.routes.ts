@@ -36,6 +36,18 @@ export const APP_ROUTES: Routes = [
     canActivate: [authGuardFn],
   },
   {
+    path: 'teams/new',
+    loadComponent: () =>
+      import('@features/teams/pages/create-team/create-team.component').then(m => m.CreateTeamComponent),
+    canActivate: [authGuardFn],
+  },
+  {
+    path: 'teams/:id',
+    loadComponent: () =>
+      import('@features/teams/pages/team-detail/team-detail.component').then(m => m.TeamDetailComponent),
+    canActivate: [authGuardFn],
+  },
+  {
     path: '**',
     redirectTo: 'login',
   },

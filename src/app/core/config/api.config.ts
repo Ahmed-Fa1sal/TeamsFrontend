@@ -20,6 +20,11 @@ export const API_CONFIG = {
       OVERVIEW: '/analytics/overview',
       ACTIVITY: '/analytics/activity',
     },
+    TEAMS: {
+      BASE:     '/teams',
+      MY_TEAMS: '/teams/my-teams',
+      SEARCH:   '/teams/search',
+    },
   }
 };
 

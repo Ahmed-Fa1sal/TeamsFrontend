@@ -1,0 +1,114 @@
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar__brand">
+    <div class="topbar__logo" aria-hidden="true">T</div>
+    <span class="topbar__product">Teams</span>
+  </div>
+
+  <nav class="topbar__nav" aria-label="Primary navigation">
+    <button type="button" class="topbar__nav-item topbar__nav-btn" (click)="onCancel()">
+      <i class="pi pi-th-large" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Home</span>
+    </button>
+  </nav>
+</header>
+
+<!-- MAIN -->
+<main class="page-main">
+  <div class="page-card card">
+
+    <!-- Header -->
+    <div class="card-header">
+      <button type="button" class="back-btn" (click)="onCancel()" aria-label="Back to home">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+      </button>
+      <div>
+        <h1 class="card-title">Create a new team</h1>
+        <p class="card-subtitle">Set up a workspace for your team to collaborate.</p>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="create-form">
+
+      <!-- Team name -->
+      <mat-form-field appearance="outline" class="field-full">
+        <mat-label>Team name</mat-label>
+        <input
+          matInput
+          formControlName="name"
+          placeholder="e.g. Engineering"
+          maxlength="100"
+          autocomplete="off"
+        />
+        <mat-error *ngIf="form.get('name')?.hasError('required')">Team name is required</mat-error>
+        <mat-error *ngIf="form.get('name')?.hasError('minlength')">At least 2 characters required</mat-error>
+      </mat-form-field>
+
+      <!-- Description -->
+      <mat-form-field appearance="outline" class="field-full">
+        <mat-label>Description <span class="optional-tag">(optional)</span></mat-label>
+        <textarea
+          matInput
+          formControlName="description"
+          rows="3"
+          placeholder="What is this team about?"
+        ></textarea>
+      </mat-form-field>
+
+      <!-- Image URL -->
+      <mat-form-field appearance="outline" class="field-full">
+        <mat-label>Image URL <span class="optional-tag">(optional)</span></mat-label>
+        <input
+          matInput
+          formControlName="imageUrl"
+          placeholder="https://example.com/image.png"
+          autocomplete="off"
+        />
+      </mat-form-field>
+
+      <!-- Organization ID -->
+      <!-- TODO: replace hardcoded organization_id with real organization selection/current organization API -->
+      <mat-form-field appearance="outline" class="field-org">
+        <mat-label>Organization ID</mat-label>
+        <input matInput type="number" formControlName="organization_id" min="1" />
+        <mat-hint>Temporary field — will be replaced by organization picker</mat-hint>
+        <mat-error *ngIf="form.get('organization_id')?.hasError('required')">Required</mat-error>
+        <mat-error *ngIf="form.get('organization_id')?.hasError('min')">Must be a valid ID</mat-error>
+      </mat-form-field>
+
+      <!-- Public / Private toggle -->
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Public team</span>
+          <span class="toggle-hint">Anyone in the organization can find and join this team</span>
+        </div>
+        <mat-slide-toggle formControlName="isPublic" color="primary"></mat-slide-toggle>
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button
+          type="button"
+          mat-button
+          class="btn-cancel"
+          (click)="onCancel()"
+          [disabled]="isSubmitting"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          mat-flat-button
+          color="primary"
+          class="btn-submit"
+          [disabled]="isSubmitting"
+        >
+          <mat-spinner *ngIf="isSubmitting" diameter="16" class="btn-spinner"></mat-spinner>
+          {{ isSubmitting ? 'Creating…' : 'Create team' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</main>
