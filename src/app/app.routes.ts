@@ -48,6 +48,20 @@ export const APP_ROUTES: Routes = [
     canActivate: [authGuardFn],
   },
   {
+    path: 'organizations',
+    loadComponent: () =>
+      import('@features/organizations/pages/organization-list/organization-list.component')
+        .then(m => m.OrganizationListComponent),
+    canActivate: [authGuardFn]
+  },
+  {
+    path: 'organizations/:id',
+    loadComponent: () =>
+      import('@features/organizations/pages/organization-detail/organization-detail.component')
+        .then(m => m.OrganizationDetailComponent),
+    canActivate: [authGuardFn]
+  },
+  {
     path: '**',
     redirectTo: 'login',
   },

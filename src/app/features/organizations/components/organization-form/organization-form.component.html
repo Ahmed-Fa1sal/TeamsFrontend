@@ -1,0 +1,65 @@
+<form [formGroup]="form" class="org-form">
+
+  <div class="field">
+    <label for="org-name" class="field-label">Name <span class="required">*</span></label>
+    <input
+      pInputText
+      id="org-name"
+      formControlName="name"
+      placeholder="Organization name"
+      class="w-full"
+      autocomplete="off" />
+    <app-form-error [message]="getError('name')" />
+  </div>
+
+  <div class="field">
+    <label for="org-desc" class="field-label">Description</label>
+    <textarea
+      pTextarea
+      id="org-desc"
+      formControlName="description"
+      placeholder="Short description"
+      rows="3"
+      class="w-full">
+    </textarea>
+  </div>
+
+  <div class="field">
+    <label for="org-logo" class="field-label">Logo URL</label>
+    <input
+      pInputText
+      id="org-logo"
+      formControlName="logoUrl"
+      placeholder="https://..."
+      class="w-full"
+      autocomplete="off" />
+  </div>
+
+  <div class="field">
+    <label for="org-tier" class="field-label">Tier <span class="required">*</span></label>
+    <p-select
+      inputId="org-tier"
+      [options]="tierOptions"
+      optionLabel="label"
+      optionValue="value"
+      formControlName="tier"
+      placeholder="Select a tier"
+      class="w-full" />
+    <app-form-error [message]="getError('tier')" />
+  </div>
+
+  <div class="form-actions">
+    <p-button
+      label="Cancel"
+      [text]="true"
+      severity="secondary"
+      (onClick)="cancel()"
+      [disabled]="submitting()" />
+    <p-button
+      [label]="isEdit() ? 'Save Changes' : 'Create'"
+      [icon]="submitting() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
+      (onClick)="submit()"
+      [disabled]="submitting()" />
+  </div>
+
+</form>

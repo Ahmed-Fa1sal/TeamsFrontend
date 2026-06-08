@@ -4,6 +4,7 @@ import {
   OnInit,
   TemplateRef,
   ViewContainerRef,
+  inject
 } from '@angular/core';
 import { AuthService } from '@features/auth/services/auth.service';
 import { UserRole } from '@features/auth/models/auth.models';
@@ -23,11 +24,9 @@ import { UserRole } from '@features/auth/models/auth.models';
 export class HasRoleDirective implements OnInit {
   @Input('appHasRole') requiredRoles: UserRole | UserRole[] = [];
 
-  constructor(
-    private readonly templateRef: TemplateRef<Record<string, unknown>>,
-    private readonly viewContainer: ViewContainerRef,
-    private readonly authService: AuthService,
-  ) {}
+  private readonly templateRef = inject(TemplateRef<Record<string, unknown>>);
+  private readonly viewContainer = inject(ViewContainerRef);
+  private readonly authService = inject(AuthService);
 
   ngOnInit(): void {
     const roles = Array.isArray(this.requiredRoles)
@@ -36,7 +35,6 @@ export class HasRoleDirective implements OnInit {
 
     const user = this.authService.getCurrentUser();
     const userRoles: UserRole[] = user?.roles?.length ? user.roles : ['member'];
-
     const show = roles.length === 0 || roles.some(r => userRoles.includes(r));
 
     if (show) {

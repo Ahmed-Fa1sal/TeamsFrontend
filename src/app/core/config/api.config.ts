@@ -9,6 +9,13 @@ export const API_CONFIG = {
     AUTH: {
       LOGIN: '/auth/login',
       REGISTER: '/auth/register',
+      LOGOUT: '/auth/logout'
+    },
+    ORGANIZATIONS: {
+      BASE: '/organizations',
+      SEARCH: '/organizations/search',
+      MY: '/organizations/my'
+    }
       LOGOUT: '/auth/logout',
       REFRESH: '/auth/refresh',
     },
