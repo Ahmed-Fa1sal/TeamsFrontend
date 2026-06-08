@@ -59,6 +59,16 @@ export interface Team {
   updatedAt?: string;
 }
 
+export interface Channel {
+  id: number;
+  name: string;
+  description?: string;
+  isPublic: boolean;
+  teamId: number;
+  teamName?: string;
+  memberCount?: number;
+}
+
 // ── Request bodies ────────────────────────────────────────────────────────────
 
 export interface CreateTeamRequest {

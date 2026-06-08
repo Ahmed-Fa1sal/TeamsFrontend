@@ -18,7 +18,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import gsap from 'gsap';
 
 import { TeamManagementFetcherService } from '../../services/team-management-fetcher.service';
-import { Team, TeamMember } from '../../models/team.models';
+import { Channel, Team, TeamMember } from '../../models/team.models';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -53,6 +53,8 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
   channelName = '';
   channelDescription = '';
   channelIsPublic = true;
+  channels: Channel[] = [];
+  isChannelsLoading = false;
 
   private teamId = 0;
   private readonly destroy$ = new Subject<void>();
@@ -89,6 +91,7 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
         next: team => {
           this.team = team;
           this.isLoading = false;
+          this.loadTeamChannels();
           setTimeout(() => {
             gsap.from('.detail-card', { y: 24, opacity: 0, duration: 0.4, ease: 'power2.out' });
             gsap.from('.member-item', { y: 12, opacity: 0, duration: 0.3, stagger: 0.05, ease: 'power2.out', delay: 0.2 });
@@ -101,8 +104,34 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
       });
   }
 
+  private loadTeamChannels(): void {
+    this.isChannelsLoading = true;
+    this.teamService
+      .getChannelsForTeam(this.teamId, { page: 0, size: 10 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: page => {
+          this.channels = page.content;
+          this.isChannelsLoading = false;
+        },
+        error: () => {
+          this.channels = [];
+          this.isChannelsLoading = false;
+        },
+      });
+  }
+
   onBack(): void {
     this.router.navigate(['/home']);
+  }
+
+  onChannelOpen(channel: Channel): void {
+    this.router.navigate(['/channels', channel.id], {
+      state: {
+        teamName: this.team?.name,
+        channelName: channel.name,
+      },
+    });
   }
 
   onArchive(): void {

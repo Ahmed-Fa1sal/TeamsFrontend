@@ -7,6 +7,7 @@ import {
   ApiResponse,
   SpringPage,
   Team,
+  Channel,
   CreateTeamRequest,
   CreateChannelRequest,
   UpdateTeamRequest,
@@ -42,6 +43,20 @@ export class TeamManagementFetcherService {
   getTeamById(id: number): Observable<Team> {
     return this.http
       .get<ApiResponse<Team>>(getApiUrl(`${this.endpoints.BASE}/${id}`))
+      .pipe(map(r => this.unwrapResponse(r)));
+  }
+
+  getChannelsForTeam(teamId: number, params?: TeamQueryParams): Observable<SpringPage<Channel>> {
+    return this.http
+      .get<ApiResponse<SpringPage<Channel>>>(getApiUrl(`${API_CONFIG.ENDPOINTS.CHANNELS}/team/${teamId}`), {
+        params: this.buildPageParams(params),
+      })
+      .pipe(map(r => this.unwrapResponse(r)));
+  }
+
+  getChannelById(channelId: number): Observable<Channel> {
+    return this.http
+      .get<ApiResponse<Channel>>(getApiUrl(`${API_CONFIG.ENDPOINTS.CHANNELS}/${channelId}`))
       .pipe(map(r => this.unwrapResponse(r)));
   }
 

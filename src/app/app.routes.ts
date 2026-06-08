@@ -48,6 +48,12 @@ export const APP_ROUTES: Routes = [
     canActivate: [authGuardFn],
   },
   {
+    path: 'channels/:id',
+    loadComponent: () =>
+      import('@features/channels/channel-chat/channel-chat.component').then(m => m.ChannelChatComponent),
+    canActivate: [authGuardFn],
+  },
+  {
     path: '**',
     redirectTo: 'login',
   },

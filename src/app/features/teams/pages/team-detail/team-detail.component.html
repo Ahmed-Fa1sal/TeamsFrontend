@@ -112,6 +112,43 @@
       </ul>
     </ng-container>
 
+    <div class="section-divider"></div>
+    <div class="section-header">
+      <i class="pi pi-hashtag" aria-hidden="true"></i>
+      <span>Channels</span>
+      <span class="member-count">{{ channels.length }}</span>
+    </div>
+
+    <ng-container *ngIf="isChannelsLoading">
+      <p class="loading-copy">Loading channels…</p>
+    </ng-container>
+
+    <ng-container *ngIf="!isChannelsLoading && channels.length > 0">
+      <ul class="channel-list" role="list">
+        <li
+          class="channel-item"
+          *ngFor="let channel of channels"
+          role="listitem"
+          tabindex="0"
+          (click)="onChannelOpen(channel)"
+          (keydown.enter)="onChannelOpen(channel)"
+        >
+          <div class="channel-item__main">
+            <span class="channel-item__name">#{{ channel.name }}</span>
+            <span class="channel-item__visibility">{{ channel.isPublic ? 'Public' : 'Private' }}</span>
+          </div>
+          <div class="channel-item__meta">
+            <span>{{ channel.description || 'No description' }}</span>
+            <span>{{ channel.memberCount ?? 0 }} members</span>
+          </div>
+        </li>
+      </ul>
+    </ng-container>
+
+    <ng-container *ngIf="!isChannelsLoading && channels.length === 0">
+      <p class="empty-copy">No channels found for this team yet.</p>
+    </ng-container>
+
     <!-- Actions -->
     <div class="section-divider"></div>
     <div class="action-bar">
