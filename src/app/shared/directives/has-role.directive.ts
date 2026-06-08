@@ -1,46 +1,28 @@
-import {
-  Directive,
-  Input,
-  OnInit,
-  TemplateRef,
-  ViewContainerRef,
-  inject
-} from '@angular/core';
+import { Directive, Input, OnInit, TemplateRef, ViewContainerRef, inject } from '@angular/core';
 import { AuthService } from '@features/auth/services/auth.service';
-import { UserRole } from '@features/auth/models/auth.models';
+import { SystemRole } from '@core/auth/roles';
 
 /**
- * Structural directive that renders its host only when the current user
- * has at least one of the specified roles.
+ * Structural directive: renders its host only when the current user
+ * holds at least one of the specified system-level roles.
  *
- * Usage:
- *   <div *appHasRole="'admin'">Admin only</div>
- *   <div *appHasRole="['admin', 'owner']">Admin or Owner</div>
+ * Prefer the more specific *hasSystemRole directive for new code.
+ *
+ * @example
+ *   <div *appHasRole="'SYSTEM_ADMIN'">Admin only</div>
  */
-@Directive({
-  selector: '[appHasRole]',
-  standalone: true,
-})
+@Directive({ selector: '[appHasRole]', standalone: true })
 export class HasRoleDirective implements OnInit {
-  @Input('appHasRole') requiredRoles: UserRole | UserRole[] = [];
+  @Input('appHasRole') requiredRoles: SystemRole | SystemRole[] = [];
 
-  private readonly templateRef = inject(TemplateRef<Record<string, unknown>>);
-  private readonly viewContainer = inject(ViewContainerRef);
-  private readonly authService = inject(AuthService);
+  private readonly tpl  = inject(TemplateRef<Record<string, unknown>>);
+  private readonly vc   = inject(ViewContainerRef);
+  private readonly auth = inject(AuthService);
 
   ngOnInit(): void {
-    const roles = Array.isArray(this.requiredRoles)
-      ? this.requiredRoles
-      : [this.requiredRoles];
-
-    const user = this.authService.getCurrentUser();
-    const userRoles: UserRole[] = user?.roles?.length ? user.roles : ['member'];
-    const show = roles.length === 0 || roles.some(r => userRoles.includes(r));
-
-    if (show) {
-      this.viewContainer.createEmbeddedView(this.templateRef);
-    } else {
-      this.viewContainer.clear();
-    }
+    const roles     = Array.isArray(this.requiredRoles) ? this.requiredRoles : [this.requiredRoles];
+    const userRoles = this.auth.getCurrentUser()?.roles ?? [];
+    const show      = !roles.length || roles.some(r => userRoles.includes(r));
+    show ? this.vc.createEmbeddedView(this.tpl) : this.vc.clear();
   }
 }

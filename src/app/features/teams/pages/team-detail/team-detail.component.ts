@@ -18,6 +18,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import gsap from 'gsap';
 
 import { TeamManagementFetcherService } from '../../services/team-management-fetcher.service';
+import { AuthService } from '@features/auth/services/auth.service';
+import { PermissionService } from '@core/services/permission.service';
+import { TeamRole } from '@core/auth/roles';
 import { Channel, Team, TeamMember } from '../../models/team.models';
 import {
   ConfirmDialogComponent,
@@ -65,6 +68,8 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
     private readonly snackBar: MatSnackBar,
     private readonly dialog: MatDialog,
     private readonly teamService: TeamManagementFetcherService,
+    private readonly authService: AuthService,
+    private readonly permissions: PermissionService,
   ) {}
 
   ngOnInit(): void {
@@ -78,6 +83,7 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.permissions.clearTeamContext();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -91,6 +97,7 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
         next: team => {
           this.team = team;
           this.isLoading = false;
+          this.syncTeamContext();
           this.loadTeamChannels();
           setTimeout(() => {
             gsap.from('.detail-card', { y: 24, opacity: 0, duration: 0.4, ease: 'power2.out' });
@@ -102,6 +109,14 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
           this.snackBar.open('Failed to load team details.', 'Dismiss', { duration: 3000 });
         },
       });
+  }
+
+  private syncTeamContext(): void {
+    const userId = Number(this.authService.getCurrentUser()?.id);
+    const member = this.team?.teamMembers?.find(m => m.user.id === userId);
+    const role   = member ? member.role as TeamRole : null;
+    console.log('[TeamDetail] syncTeamContext | userId:', userId, '| member:', member, '| role:', role);
+    this.permissions.setTeamContext(role);
   }
 
   private loadTeamChannels(): void {

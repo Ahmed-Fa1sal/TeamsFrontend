@@ -1,27 +1,25 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '@features/auth/services/auth.service';
-import { UserRole } from '@features/auth/models/auth.models';
+import { SystemRole } from '@core/auth/roles';
 
 /**
- * Factory that returns a CanActivateFn restricted to the given roles.
- * Usage: canActivate: [roleGuard(['admin', 'owner'])]
+ * Factory that returns a CanActivateFn restricted to the given system roles.
+ *
+ * @example
+ *   canActivate: [roleGuard([SystemRole.SYSTEM_ADMIN])]
  */
-export const roleGuard = (requiredRoles: UserRole[]): CanActivateFn =>
+export const roleGuard = (requiredRoles: SystemRole[]): CanActivateFn =>
   (_route, state) => {
-    const authService = inject(AuthService);
+    const auth   = inject(AuthService);
     const router = inject(Router);
 
-    if (!authService.isAuthenticated()) {
-      return router.createUrlTree(['/login'], {
-        queryParams: { returnUrl: state.url },
-      });
+    if (!auth.isAuthenticated()) {
+      return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
     }
 
-    const user = authService.getCurrentUser();
-    // Default to 'member' so users without explicit roles aren't blocked
-    const userRoles: UserRole[] = user?.roles?.length ? user.roles : ['member'];
-    const hasRole = requiredRoles.some(r => userRoles.includes(r));
-
-    return hasRole ? true : router.createUrlTree(['/home']);
+    const userRoles = auth.getCurrentUser()?.roles ?? [];
+    return requiredRoles.some(r => userRoles.includes(r))
+      ? true
+      : router.createUrlTree(['/home']);
   };
