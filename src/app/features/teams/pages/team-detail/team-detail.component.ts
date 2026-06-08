@@ -1,5 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -7,14 +8,17 @@ import { takeUntil } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import gsap from 'gsap';
 
 import { TeamManagementFetcherService } from '../../services/team-management-fetcher.service';
-import { Team, TeamMember } from '../../models/team.models';
+import { Channel, Team, TeamMember } from '../../models/team.models';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -25,20 +29,32 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatButtonModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatDialogModule,
     MatDividerModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCheckboxModule,
     MatTooltipModule,
   ],
   templateUrl: './team-detail.component.html',
   styleUrl: './team-detail.component.css',
 })
 export class TeamDetailComponent implements OnInit, OnDestroy {
+  @ViewChild('createChannelDialog') private createChannelDialog!: TemplateRef<unknown>;
+
   team: Team | null = null;
   isLoading = true;
   isActing = false;
+
+  channelName = '';
+  channelDescription = '';
+  channelIsPublic = true;
+  channels: Channel[] = [];
+  isChannelsLoading = false;
 
   private teamId = 0;
   private readonly destroy$ = new Subject<void>();
@@ -75,6 +91,7 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
         next: team => {
           this.team = team;
           this.isLoading = false;
+          this.loadTeamChannels();
           setTimeout(() => {
             gsap.from('.detail-card', { y: 24, opacity: 0, duration: 0.4, ease: 'power2.out' });
             gsap.from('.member-item', { y: 12, opacity: 0, duration: 0.3, stagger: 0.05, ease: 'power2.out', delay: 0.2 });
@@ -87,8 +104,34 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
       });
   }
 
+  private loadTeamChannels(): void {
+    this.isChannelsLoading = true;
+    this.teamService
+      .getChannelsForTeam(this.teamId, { page: 0, size: 10 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: page => {
+          this.channels = page.content;
+          this.isChannelsLoading = false;
+        },
+        error: () => {
+          this.channels = [];
+          this.isChannelsLoading = false;
+        },
+      });
+  }
+
   onBack(): void {
     this.router.navigate(['/home']);
+  }
+
+  onChannelOpen(channel: Channel): void {
+    this.router.navigate(['/channels', channel.id], {
+      state: {
+        teamName: this.team?.name,
+        channelName: channel.name,
+      },
+    });
   }
 
   onArchive(): void {
@@ -172,6 +215,53 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
             },
           });
       });
+  }
+
+  openCreateChannel(): void {
+    this.resetChannelForm();
+    this.dialog.open(this.createChannelDialog, {
+      width: '420px',
+      panelClass: 'create-channel-dialog',
+    });
+  }
+
+  createChannel(dialogRef: MatDialogRef<unknown>): void {
+    const name = this.channelName.trim();
+    if (!name || !this.team) {
+      return;
+    }
+
+    this.isActing = true;
+    this.teamService
+      .createChannel(this.teamId, {
+        teamId: this.teamId,
+        name,
+        description: this.channelDescription.trim() || undefined,
+        isPublic: this.channelIsPublic,
+      })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.isActing = false;
+          dialogRef.close();
+          this.snackBar.open('Channel created successfully.', 'Dismiss', { duration: 3000 });
+          this.loadTeam();
+        },
+        error: () => {
+          this.isActing = false;
+          this.snackBar.open('Failed to create channel.', 'Dismiss', { duration: 3000 });
+        },
+      });
+  }
+
+  cancelCreateChannel(dialogRef: MatDialogRef<unknown>): void {
+    dialogRef.close();
+  }
+
+  private resetChannelForm(): void {
+    this.channelName = '';
+    this.channelDescription = '';
+    this.channelIsPublic = true;
   }
 
   get avatarLabel(): string {

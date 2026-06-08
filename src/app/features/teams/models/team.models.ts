@@ -59,6 +59,16 @@ export interface Team {
   updatedAt?: string;
 }
 
+export interface Channel {
+  id: number;
+  name: string;
+  description?: string;
+  isPublic: boolean;
+  teamId: number;
+  teamName?: string;
+  memberCount?: number;
+}
+
 // ── Request bodies ────────────────────────────────────────────────────────────
 
 export interface CreateTeamRequest {
@@ -75,6 +85,13 @@ export interface UpdateTeamRequest {
   imageUrl?: string;
   isPublic?: boolean;
   archived?: boolean;
+}
+
+export interface CreateChannelRequest {
+  teamId: number;
+  name: string;
+  description?: string;
+  isPublic: boolean;
 }
 
 // ── Query / pagination params ─────────────────────────────────────────────────

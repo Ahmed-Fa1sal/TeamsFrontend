@@ -7,7 +7,9 @@ import {
   ApiResponse,
   SpringPage,
   Team,
+  Channel,
   CreateTeamRequest,
+  CreateChannelRequest,
   UpdateTeamRequest,
   TeamQueryParams,
 } from '../models/team.models';
@@ -44,6 +46,20 @@ export class TeamManagementFetcherService {
       .pipe(map(r => this.unwrapResponse(r)));
   }
 
+  getChannelsForTeam(teamId: number, params?: TeamQueryParams): Observable<SpringPage<Channel>> {
+    return this.http
+      .get<ApiResponse<SpringPage<Channel>>>(getApiUrl(`${API_CONFIG.ENDPOINTS.CHANNELS}/team/${teamId}`), {
+        params: this.buildPageParams(params),
+      })
+      .pipe(map(r => this.unwrapResponse(r)));
+  }
+
+  getChannelById(channelId: number): Observable<Channel> {
+    return this.http
+      .get<ApiResponse<Channel>>(getApiUrl(`${API_CONFIG.ENDPOINTS.CHANNELS}/${channelId}`))
+      .pipe(map(r => this.unwrapResponse(r)));
+  }
+
   searchTeams(query: string, params?: TeamQueryParams): Observable<SpringPage<Team>> {
     const httpParams = this.buildPageParams(params).set('query', query);
     return this.http
@@ -59,6 +75,12 @@ export class TeamManagementFetcherService {
     return this.http
       .post<ApiResponse<Team>>(getApiUrl(this.endpoints.BASE), request)
       .pipe(map(r => this.unwrapResponse(r)));
+  }
+
+  createChannel(teamId: number, request: CreateChannelRequest): Observable<void> {
+    return this.http
+      .post<ApiResponse<unknown>>(getApiUrl(`${API_CONFIG.ENDPOINTS.CHANNELS}/${teamId}`), request)
+      .pipe(map(r => this.unwrapVoid(r)));
   }
 
   updateTeam(id: number, request: UpdateTeamRequest): Observable<Team> {
