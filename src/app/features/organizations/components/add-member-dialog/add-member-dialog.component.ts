@@ -15,6 +15,7 @@ import {
   AddOrganizationMemberRequest,
   OrganizationMemberRole
 } from '../../models/organization.model';
+import { ROLE_LABELS } from '../../pipes/org-role-label.pipe';
 
 export interface AddMemberDialogData {
   orgId: number;
@@ -42,7 +43,7 @@ export class AddMemberDialogComponent {
 
   readonly dialogData: AddMemberDialogData = this.config.data;
   readonly submitting = signal(false);
-  readonly roleOptions = Object.values(OrganizationMemberRole).map(r => ({ label: r, value: r }));
+  readonly roleOptions = Object.values(OrganizationMemberRole).map(r => ({ label: ROLE_LABELS[r], value: r }));
 
   readonly form = this.fb.group({
     userId: ['', Validators.required],

@@ -12,6 +12,7 @@ import {
   OrganizationMemberRole,
   UpdateMemberRoleRequest
 } from '../../models/organization.model';
+import { ROLE_LABELS } from '../../pipes/org-role-label.pipe';
 
 export interface UpdateRoleDialogData {
   currentRole: OrganizationMemberRole;
@@ -35,7 +36,7 @@ export class UpdateMemberRoleDialogComponent {
   private readonly config = inject(DynamicDialogConfig);
 
   readonly dialogData: UpdateRoleDialogData = this.config.data;
-  readonly roleOptions = Object.values(OrganizationMemberRole).map(r => ({ label: r, value: r }));
+  readonly roleOptions = Object.values(OrganizationMemberRole).map(r => ({ label: ROLE_LABELS[r], value: r }));
   readonly selectedRole = signal<OrganizationMemberRole>(this.dialogData.currentRole);
 
   confirm(): void {

@@ -147,7 +147,7 @@
             </td>
             <td>
               <p-tag
-                [value]="m.role"
+                [value]="m.role | orgRoleLabel"
                 [severity]="roleSeverity(m.role)"
                 [rounded]="true" />
             </td>

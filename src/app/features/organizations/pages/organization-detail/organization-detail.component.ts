@@ -35,6 +35,7 @@ import {
   UpdateMemberRoleRequest
 } from '../../models/organization.model';
 import { FormErrorComponent } from '@shared/components/form-error/form-error.component';
+import { OrgRoleLabelPipe, ROLE_LABELS } from '../../pipes/org-role-label.pipe';
 import {
   OrgFormResult,
   OrganizationFormComponent
@@ -62,7 +63,8 @@ import {
     TooltipModule,
     PaginatorModule,
     DividerModule,
-    FormErrorComponent
+    FormErrorComponent,
+    OrgRoleLabelPipe
   ],
   templateUrl: './organization-detail.component.html',
   styleUrls: ['./organization-detail.component.css']
@@ -92,7 +94,7 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
 
   readonly roleFilterOptions = [
     { label: 'All roles', value: null },
-    ...Object.values(OrganizationMemberRole).map(r => ({ label: r, value: r }))
+    ...Object.values(OrganizationMemberRole).map(r => ({ label: ROLE_LABELS[r], value: r }))
   ];
 
   readonly currentUserId = computed(() => Number(this.authService.getCurrentUser()?.id ?? 0));

@@ -6,6 +6,12 @@ export enum OrganizationMemberRole {
     MEMBER = 'MEMBER'
 }
 
+export const OrganizationMemberRoleLabels: Record<OrganizationMemberRole, string> = {
+    [OrganizationMemberRole.ORG_ADMIN]: 'Organization Admin',
+    [OrganizationMemberRole.TEAM_ADMIN]: 'Team Admin',
+    [OrganizationMemberRole.MEMBER]: 'Member'
+};
+
 export type OrganizationTier = 'FREE' | 'PROFESSIONAL' | 'ENTERPRISE';
 
 export interface OrganizationResponse {
