@@ -91,7 +91,7 @@ export class OrganizationListComponent implements OnInit, OnDestroy {
     readonly searchControl = new FormControl('');
 
     readonly isSystemAdmin = computed(
-        () => this.authService.getCurrentUser()?.roles?.includes('ROLE_SYSTEM_ADMIN') ?? false
+        () => this.authService.getCurrentUser()?.roles?.includes('admin') ?? false
     );
 
     ngOnInit(): void {

@@ -99,7 +99,7 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
 
   readonly currentUserId = computed(() => Number(this.authService.getCurrentUser()?.id ?? 0));
   readonly isSystemAdmin = computed(
-    () => this.authService.getCurrentUser()?.roles?.includes('ROLE_SYSTEM_ADMIN') ?? false
+    () => this.authService.getCurrentUser()?.roles?.includes('admin') ?? false
   );
   readonly currentMembership = computed(() =>
     this.members().find(m => m.userId === this.currentUserId())

@@ -22,7 +22,7 @@
                     placeholder="Search organizations…" />
         </p-iconfield>
 
-        <div class="admin-toggle" *hasRole="'ROLE_SYSTEM_ADMIN'">
+        <div class="admin-toggle" *appHasRole="'admin'">
             <p-toggleswitch
                     [ngModel]="isAdminView()"
                     (ngModelChange)="onAdminToggle($event)" />
@@ -82,7 +82,7 @@
                                     tooltipPosition="top"
                                     (onClick)="viewOrg(org.id)" />
 
-                            <ng-container *hasRole="'ROLE_SYSTEM_ADMIN'">
+                            <ng-container *appHasRole="'admin'">
                                 <p-button
                                         icon="pi pi-pencil"
                                         [text]="true"

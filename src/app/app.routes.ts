@@ -51,7 +51,9 @@ export const APP_ROUTES: Routes = [
     path: 'channels/:id',
     loadComponent: () =>
       import('@features/channels/channel-chat/channel-chat.component').then(m => m.ChannelChatComponent),
-    canActivate: [authGuardFn],
+    canActivate: [authGuardFn]
+  },
+    {
     path: 'organizations',
     loadComponent: () =>
       import('@features/organizations/pages/organization-list/organization-list.component')
