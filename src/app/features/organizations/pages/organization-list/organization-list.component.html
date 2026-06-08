@@ -1,0 +1,136 @@
+<p-toast position="top-right" />
+<p-confirmdialog />
+
+<div class="org-list-container">
+
+    <!-- Header -->
+    <div class="page-header">
+        <h1 class="page-title">Organizations</h1>
+        <p-button
+                label="New Organization"
+                icon="pi pi-plus"
+                (onClick)="openCreateDialog()" />
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <p-iconfield class="search-field">
+            <p-inputicon styleClass="pi pi-search" />
+            <input
+                    pInputText
+                    [formControl]="searchControl"
+                    placeholder="Search organizations…" />
+        </p-iconfield>
+
+        <div class="admin-toggle" *hasRole="'ROLE_SYSTEM_ADMIN'">
+            <p-toggleswitch
+                    [ngModel]="isAdminView()"
+                    (ngModelChange)="onAdminToggle($event)" />
+            <span class="toggle-label">All Organizations</span>
+        </div>
+    </div>
+
+    <!-- Error -->
+    <app-form-error [message]="error()" />
+
+    <!-- Loading -->
+    @if (loading()) {
+        <div class="loading-wrap">
+            <p-progressspinner strokeWidth="4" />
+        </div>
+    }
+
+    <!-- Table -->
+    @if (!loading()) {
+        <div class="table-wrap">
+            <p-table
+                    [value]="organizations()"
+                    [tableStyle]="{ 'min-width': '40rem' }"
+                    [rowHover]="true"
+                    styleClass="p-datatable-sm">
+
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Members</th>
+                        <th style="width: 9rem"></th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-org>
+                    <tr>
+                        <td>
+                            <a class="org-link" [routerLink]="['/organizations', org.id]">{{ org.name }}</a>
+                        </td>
+                        <td class="desc-cell">{{ org.description || '—' }}</td>
+                        <td>
+                            <p-tag
+                                    [value]="org.active ? 'Active' : 'Inactive'"
+                                    [severity]="org.active ? 'success' : 'danger'"
+                                    [rounded]="true" />
+                        </td>
+                        <td>{{ org.memberCount ?? '—' }}</td>
+                        <td class="actions-cell">
+
+                            <p-button
+                                    icon="pi pi-eye"
+                                    [text]="true"
+                                    severity="secondary"
+                                    pTooltip="View details"
+                                    tooltipPosition="top"
+                                    (onClick)="viewOrg(org.id)" />
+
+                            <ng-container *hasRole="'ROLE_SYSTEM_ADMIN'">
+                                <p-button
+                                        icon="pi pi-pencil"
+                                        [text]="true"
+                                        severity="secondary"
+                                        pTooltip="Edit"
+                                        tooltipPosition="top"
+                                        (onClick)="openEditDialog(org)" />
+
+                                <p-button
+                                        [icon]="org.active ? 'pi pi-pause' : 'pi pi-play'"
+                                        [text]="true"
+                                        severity="secondary"
+                                        [pTooltip]="org.active ? 'Deactivate' : 'Activate'"
+                                        tooltipPosition="top"
+                                        (onClick)="toggleActivation(org)" />
+
+                                <p-button
+                                        icon="pi pi-trash"
+                                        [text]="true"
+                                        severity="danger"
+                                        pTooltip="Delete"
+                                        tooltipPosition="top"
+                                        (onClick)="confirmDelete(org)" />
+                            </ng-container>
+
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="5" class="no-data">No organizations found.</td>
+                    </tr>
+                </ng-template>
+
+            </p-table>
+
+            @if (total() > 0) {
+                <p-paginator
+                        [rows]="pageSize()"
+                        [totalRecords]="total()"
+                        [first]="page() * pageSize()"
+                        [rowsPerPageOptions]="[5, 10, 25, 50]"
+                        [showCurrentPageReport]="true"
+                        currentPageReportTemplate="{first}–{last} of {totalRecords}"
+                        (onPageChange)="onPageChange($event)" />
+            }
+        </div>
+    }
+
+</div>
