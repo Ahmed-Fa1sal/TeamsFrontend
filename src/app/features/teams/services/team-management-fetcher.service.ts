@@ -8,6 +8,7 @@ import {
   SpringPage,
   Team,
   CreateTeamRequest,
+  CreateChannelRequest,
   UpdateTeamRequest,
   TeamQueryParams,
 } from '../models/team.models';
@@ -59,6 +60,12 @@ export class TeamManagementFetcherService {
     return this.http
       .post<ApiResponse<Team>>(getApiUrl(this.endpoints.BASE), request)
       .pipe(map(r => this.unwrapResponse(r)));
+  }
+
+  createChannel(teamId: number, request: CreateChannelRequest): Observable<void> {
+    return this.http
+      .post<ApiResponse<unknown>>(getApiUrl(`${API_CONFIG.ENDPOINTS.CHANNELS}/${teamId}`), request)
+      .pipe(map(r => this.unwrapVoid(r)));
   }
 
   updateTeam(id: number, request: UpdateTeamRequest): Observable<Team> {

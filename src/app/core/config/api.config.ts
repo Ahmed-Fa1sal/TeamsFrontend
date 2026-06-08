@@ -25,6 +25,7 @@ export const API_CONFIG = {
       MY_TEAMS: '/teams/my-teams',
       SEARCH:   '/teams/search',
     },
+    CHANNELS: '/channels',
   }
 };
 

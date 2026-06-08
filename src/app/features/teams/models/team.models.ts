@@ -77,6 +77,13 @@ export interface UpdateTeamRequest {
   archived?: boolean;
 }
 
+export interface CreateChannelRequest {
+  teamId: number;
+  name: string;
+  description?: string;
+  isPublic: boolean;
+}
+
 // ── Query / pagination params ─────────────────────────────────────────────────
 
 export interface TeamQueryParams {

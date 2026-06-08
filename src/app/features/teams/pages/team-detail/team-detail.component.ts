@@ -1,5 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -7,8 +8,11 @@ import { takeUntil } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import gsap from 'gsap';
@@ -25,20 +29,30 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatButtonModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatDialogModule,
     MatDividerModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCheckboxModule,
     MatTooltipModule,
   ],
   templateUrl: './team-detail.component.html',
   styleUrl: './team-detail.component.css',
 })
 export class TeamDetailComponent implements OnInit, OnDestroy {
+  @ViewChild('createChannelDialog') private createChannelDialog!: TemplateRef<unknown>;
+
   team: Team | null = null;
   isLoading = true;
   isActing = false;
+
+  channelName = '';
+  channelDescription = '';
+  channelIsPublic = true;
 
   private teamId = 0;
   private readonly destroy$ = new Subject<void>();
@@ -172,6 +186,53 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
             },
           });
       });
+  }
+
+  openCreateChannel(): void {
+    this.resetChannelForm();
+    this.dialog.open(this.createChannelDialog, {
+      width: '420px',
+      panelClass: 'create-channel-dialog',
+    });
+  }
+
+  createChannel(dialogRef: MatDialogRef<unknown>): void {
+    const name = this.channelName.trim();
+    if (!name || !this.team) {
+      return;
+    }
+
+    this.isActing = true;
+    this.teamService
+      .createChannel(this.teamId, {
+        teamId: this.teamId,
+        name,
+        description: this.channelDescription.trim() || undefined,
+        isPublic: this.channelIsPublic,
+      })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.isActing = false;
+          dialogRef.close();
+          this.snackBar.open('Channel created successfully.', 'Dismiss', { duration: 3000 });
+          this.loadTeam();
+        },
+        error: () => {
+          this.isActing = false;
+          this.snackBar.open('Failed to create channel.', 'Dismiss', { duration: 3000 });
+        },
+      });
+  }
+
+  cancelCreateChannel(dialogRef: MatDialogRef<unknown>): void {
+    dialogRef.close();
+  }
+
+  private resetChannelForm(): void {
+    this.channelName = '';
+    this.channelDescription = '';
+    this.channelIsPublic = true;
   }
 
   get avatarLabel(): string {
