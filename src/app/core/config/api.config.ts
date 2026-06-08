@@ -9,15 +9,13 @@ export const API_CONFIG = {
     AUTH: {
       LOGIN: '/auth/login',
       REGISTER: '/auth/register',
-      LOGOUT: '/auth/logout'
+      LOGOUT: '/auth/logout',
+      REFRESH: '/auth/refresh',
     },
     ORGANIZATIONS: {
       BASE: '/organizations',
       SEARCH: '/organizations/search',
-      MY: '/organizations/my'
-    }
-      LOGOUT: '/auth/logout',
-      REFRESH: '/auth/refresh',
+      MY: '/organizations/my',
     },
     USERS: {
       ME: '/users/me',
@@ -28,12 +26,12 @@ export const API_CONFIG = {
       ACTIVITY: '/analytics/activity',
     },
     TEAMS: {
-      BASE:     '/teams',
+      BASE: '/teams',
       MY_TEAMS: '/teams/my-teams',
-      SEARCH:   '/teams/search',
+      SEARCH: '/teams/search',
     },
     CHANNELS: '/channels',
-  }
+  },
 };
 
 /**

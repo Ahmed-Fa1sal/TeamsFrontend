@@ -11,21 +11,11 @@ import {
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { PaginatorState } from 'primeng/paginator';
 import { Subject, takeUntil } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { TagModule } from 'primeng/tag';
-import { ToastModule } from 'primeng/toast';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { TooltipModule } from 'primeng/tooltip';
-import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { PrimeNgModule } from '@shared/modules/primeng.module';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -46,22 +36,8 @@ import { CreateOrganizationRequest } from '../../models/organization.model';
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
+        PrimeNgModule,
         RouterLink,
-        FormsModule,
-        ReactiveFormsModule,
-        TableModule,
-        ButtonModule,
-        InputTextModule,
-        IconFieldModule,
-        InputIconModule,
-        ToggleSwitchModule,
-        ProgressSpinnerModule,
-        TagModule,
-        ToastModule,
-        ConfirmDialogModule,
-        TooltipModule,
-        PaginatorModule,
         HasRoleDirective,
         FormErrorComponent
     ],

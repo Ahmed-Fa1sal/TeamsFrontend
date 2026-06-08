@@ -12,16 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { SelectModule } from 'primeng/select';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { TagModule } from 'primeng/tag';
-import { ToastModule } from 'primeng/toast';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { TooltipModule } from 'primeng/tooltip';
-import { PaginatorModule, PaginatorState } from 'primeng/paginator';
-import { DividerModule } from 'primeng/divider';
+import { PrimeNgModule } from '@shared/modules/primeng.module';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -45,24 +36,14 @@ import {
   UpdateMemberRoleDialogComponent,
   UpdateRoleDialogData
 } from '../../components/update-member-role-dialog/update-member-role-dialog.component';
+import { PaginatorState } from 'primeng/paginator';
 
 @Component({
   selector: 'app-organization-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
-    FormsModule,
-    TableModule,
-    ButtonModule,
-    SelectModule,
-    ProgressSpinnerModule,
-    TagModule,
-    ToastModule,
-    ConfirmDialogModule,
-    TooltipModule,
-    PaginatorModule,
-    DividerModule,
+    PrimeNgModule,
     FormErrorComponent,
     OrgRoleLabelPipe
   ],

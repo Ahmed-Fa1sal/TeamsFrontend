@@ -106,8 +106,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   getRoleLabel(role: UserRole): string {
-    const map: Record<UserRole, string> = {
-      admin: 'Admin', owner: 'Owner', member: 'Member', viewer: 'Viewer',
+    const map: Partial<Record<UserRole, string>> = {
+      admin: 'Admin',
+      owner: 'Owner',
+      member: 'Member',
+      viewer: 'Viewer',
+      ROLE_SYSTEM_ADMIN: 'System Admin',
     };
     return map[role] ?? role;
   }

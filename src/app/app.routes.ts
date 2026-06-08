@@ -52,18 +52,20 @@ export const APP_ROUTES: Routes = [
     loadComponent: () =>
       import('@features/channels/channel-chat/channel-chat.component').then(m => m.ChannelChatComponent),
     canActivate: [authGuardFn],
+  },
+  {
     path: 'organizations',
     loadComponent: () =>
       import('@features/organizations/pages/organization-list/organization-list.component')
         .then(m => m.OrganizationListComponent),
-    canActivate: [authGuardFn]
+    canActivate: [authGuardFn],
   },
   {
     path: 'organizations/:id',
     loadComponent: () =>
       import('@features/organizations/pages/organization-detail/organization-detail.component')
         .then(m => m.OrganizationDetailComponent),
-    canActivate: [authGuardFn]
+    canActivate: [authGuardFn],
   },
   {
     path: '**',
