@@ -1,2 +1,8 @@
 <router-outlet></router-outlet>
 <app-scrollbar></app-scrollbar>
+
+<div class="global-loading-overlay" *ngIf="isLoading$ | async">
+  <div class="spinner-panel">
+    <mat-spinner diameter="60"></mat-spinner>
+  </div>
+</div>
