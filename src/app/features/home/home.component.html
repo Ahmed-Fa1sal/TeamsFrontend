@@ -11,16 +11,8 @@
   <nav class="topbar__nav" aria-label="Primary navigation">
     <span class="topbar__nav-item topbar__nav-item--active" aria-current="page">
       <i class="pi pi-th-large" aria-hidden="true"></i>
-      <span class="topbar__nav-label">Home</span>
+      <span class="topbar__nav-label">Dashboard</span>
     </span>
-    <button type="button" class="topbar__nav-item topbar__nav-btn" (click)="onNavigate('/dashboard')">
-      <i class="pi pi-chart-bar" aria-hidden="true"></i>
-      <span class="topbar__nav-label">Analytics</span>
-    </button>
-    <button type="button" class="topbar__nav-item topbar__nav-btn" (click)="onNavigate('/profile')">
-      <i class="pi pi-user" aria-hidden="true"></i>
-      <span class="topbar__nav-label">Profile</span>
-    </button>
   </nav>
 
   <div class="topbar__end">
@@ -55,15 +47,6 @@
             <span class="pp-email">{{ currentUser.email }}</span>
           </div>
         </div>
-        <mat-divider></mat-divider>
-        <button type="button" mat-menu-item (click)="onNavigate('/profile')" class="pp-action-btn">
-          <i class="pi pi-user" aria-hidden="true"></i>
-          <span>My Profile</span>
-        </button>
-        <button type="button" mat-menu-item (click)="onNavigate('/dashboard')" class="pp-action-btn">
-          <i class="pi pi-chart-bar" aria-hidden="true"></i>
-          <span>Analytics</span>
-        </button>
         <mat-divider></mat-divider>
         <button
           type="button"
@@ -284,44 +267,59 @@
           </button>
         </div>
 
-        <ul class="teams-list">
-          <li
-            *ngFor="let team of teams"
-            class="team-row"
-            tabindex="0"
-            [attr.aria-label]="team.name + ' — ' + team.description"
-            (click)="onTeamOpen(team)"
-            (keydown.enter)="onTeamOpen(team)"
-          >
-            <div
-              class="av-circle av-circle--md"
-              aria-hidden="true"
-              [ngStyle]="{ background: team.avatarColor, color: '#fff', 'font-weight': '700', 'font-size': '0.75rem', 'flex-shrink': '0' }"
-            >{{ team.avatarLabel }}</div>
-
-            <div class="team-row__info">
-              <div class="team-row__top">
-                <span class="team-row__name">{{ team.name }}</span>
-                <span *ngIf="team.isOwner" class="owner-tag">Owner</span>
-              </div>
-              <span class="team-row__meta">
-                {{ team.memberCount }} members&nbsp;·&nbsp;{{ team.channelCount }} channels
-              </span>
-            </div>
-
-            <button
-              type="button"
-              mat-icon-button
-              [matTooltip]="'Open team'"
-              matTooltipPosition="left"
-              aria-label="Open team"
-              (click)="$event.stopPropagation(); onTeamOpen(team)"
-              class="team-open-btn"
+        <ng-container *ngIf="teams.length > 0; else emptyTeams">
+          <ul class="teams-list">
+            <li
+              *ngFor="let team of teams"
+              class="team-row"
+              tabindex="0"
+              [attr.aria-label]="team.name + ' — ' + team.description"
+              (click)="onTeamOpen(team)"
+              (keydown.enter)="onTeamOpen(team)"
             >
-              <i class="pi pi-arrow-right" aria-hidden="true"></i>
-            </button>
-          </li>
-        </ul>
+              <div
+                class="av-circle av-circle--md"
+                aria-hidden="true"
+                [ngStyle]="{ background: team.avatarColor, color: '#fff', 'font-weight': '700', 'font-size': '0.75rem', 'flex-shrink': '0' }"
+              >{{ team.avatarLabel }}</div>
+
+              <div class="team-row__info">
+                <div class="team-row__top">
+                  <span class="team-row__name">{{ team.name }}</span>
+                  <span *ngIf="team.isOwner" class="owner-tag">Owner</span>
+                </div>
+                <span class="team-row__meta">
+                  {{ team.memberCount }} members&nbsp;·&nbsp;{{ team.channelCount }} channels
+                </span>
+              </div>
+
+              <button
+                type="button"
+                mat-icon-button
+                [matTooltip]="'Open team'"
+                matTooltipPosition="left"
+                aria-label="Open team"
+                (click)="$event.stopPropagation(); onTeamOpen(team)"
+                class="team-open-btn"
+              >
+                <i class="pi pi-arrow-right" aria-hidden="true"></i>
+              </button>
+            </li>
+          </ul>
+        </ng-container>
+
+        <ng-template #emptyTeams>
+          <div class="teams-empty">
+            <div class="teams-empty__icon">T</div>
+            <div>
+              <p class="teams-empty__text">You don’t have any teams yet.</p>
+              <p class="teams-empty__sub">Create your first team to start collaborating with your organization.</p>
+              <button type="button" mat-flat-button color="primary" class="teams-empty__cta" (click)="onQuickAction('create-team')">
+                Create new team
+              </button>
+            </div>
+          </div>
+        </ng-template>
       </section>
 
       <!-- Recent Channels -->

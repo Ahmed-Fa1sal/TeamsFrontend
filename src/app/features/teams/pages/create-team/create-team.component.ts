@@ -7,6 +7,7 @@ import { takeUntil } from 'rxjs/operators';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -19,6 +20,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TeamManagementFetcherService } from '../../services/team-management-fetcher.service';
 import { CreateTeamRequest } from '../../models/team.models';
 
+interface OrganizationOption {
+  id: number;
+  name: string;
+}
+
 @Component({
   selector: 'app-create-team',
   standalone: true,
@@ -27,6 +33,7 @@ import { CreateTeamRequest } from '../../models/team.models';
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatButtonModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
@@ -38,6 +45,12 @@ import { CreateTeamRequest } from '../../models/team.models';
 export class CreateTeamComponent implements OnInit, OnDestroy {
   form: FormGroup;
   isSubmitting = false;
+
+  readonly organizations: OrganizationOption[] = [
+    { id: 1, name: 'Acme Corporation' },
+    { id: 2, name: 'Bluebird Labs' },
+    { id: 3, name: 'Northern Trust' },
+  ];
 
   private readonly destroy$ = new Subject<void>();
 
@@ -53,7 +66,7 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
       imageUrl: [''],
       isPublic: [true],
       // TODO: replace hardcoded organization_id with real organization selection/current organization API
-      organization_id: [1, [Validators.required, Validators.min(1)]],
+      organization_id: [null, [Validators.required]],
     });
   }
 

@@ -101,28 +101,28 @@ export class HomeComponent implements OnInit, OnDestroy {
     plan: 'Enterprise',
   };
 
-  teams: Team[] = [
-    {
-      id: 't1', name: 'Engineering', description: 'Core product development',
-      memberCount: 8, channelCount: 5, avatarLabel: 'EN',
-      avatarColor: '#5b5fc7', isOwner: true,
-    },
-    {
-      id: 't2', name: 'Design', description: 'UI/UX & brand',
-      memberCount: 4, channelCount: 3, avatarLabel: 'DS',
-      avatarColor: '#237b4b', isOwner: false,
-    },
-    {
-      id: 't3', name: 'Product', description: 'Roadmap & strategy',
-      memberCount: 6, channelCount: 4, avatarLabel: 'PR',
-      avatarColor: '#d83b01', isOwner: false,
-    },
-    {
-      id: 't4', name: 'Marketing', description: 'Growth & campaigns',
-      memberCount: 6, channelCount: 4, avatarLabel: 'MK',
-      avatarColor: '#008299', isOwner: false,
-    },
-  ];
+  // teams: Team[] = [
+  //   {
+  //     id: 't1', name: 'Engineering', description: 'Core product development',
+  //     memberCount: 8, channelCount: 5, avatarLabel: 'EN',
+  //     avatarColor: '#5b5fc7', isOwner: true,
+  //   },
+  //   {
+  //     id: 't2', name: 'Design', description: 'UI/UX & brand',
+  //     memberCount: 4, channelCount: 3, avatarLabel: 'DS',
+  //     avatarColor: '#237b4b', isOwner: false,
+  //   },
+  //   {
+  //     id: 't3', name: 'Product', description: 'Roadmap & strategy',
+  //     memberCount: 6, channelCount: 4, avatarLabel: 'PR',
+  //     avatarColor: '#d83b01', isOwner: false,
+  //   },
+  //   {
+  //     id: 't4', name: 'Marketing', description: 'Growth & campaigns',
+  //     memberCount: 6, channelCount: 4, avatarLabel: 'MK',
+  //     avatarColor: '#008299', isOwner: false,
+  //   },
+  // ];
 
   readonly channels: Channel[] = [
     {
@@ -195,6 +195,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private readonly AVATAR_COLORS = [
     '#5b5fc7', '#237b4b', '#d83b01', '#008299', '#b86800', '#744da9',
   ];
+  teams: Team[] = [];
 
   constructor(
     private readonly authService: AuthService,
@@ -210,6 +211,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     this.currentUser = this.authService.getCurrentUser();
+    this.teams = [];
     this.isLoading = false;
     this.loadTeams();
 
