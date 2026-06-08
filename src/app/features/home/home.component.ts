@@ -17,6 +17,8 @@ import gsap from 'gsap';
 
 import { AuthService } from '../auth/services/auth.service';
 import { User } from '../auth/models/auth.models';
+import { TeamManagementFetcherService } from '../teams/services/team-management-fetcher.service';
+import { Team as ApiTeam } from '../teams/models/team.models';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -99,28 +101,28 @@ export class HomeComponent implements OnInit, OnDestroy {
     plan: 'Enterprise',
   };
 
-  readonly teams: Team[] = [
-    {
-      id: 't1', name: 'Engineering', description: 'Core product development',
-      memberCount: 8, channelCount: 5, avatarLabel: 'EN',
-      avatarColor: '#5b5fc7', isOwner: true,
-    },
-    {
-      id: 't2', name: 'Design', description: 'UI/UX & brand',
-      memberCount: 4, channelCount: 3, avatarLabel: 'DS',
-      avatarColor: '#237b4b', isOwner: false,
-    },
-    {
-      id: 't3', name: 'Product', description: 'Roadmap & strategy',
-      memberCount: 6, channelCount: 4, avatarLabel: 'PR',
-      avatarColor: '#d83b01', isOwner: false,
-    },
-    {
-      id: 't4', name: 'Marketing', description: 'Growth & campaigns',
-      memberCount: 6, channelCount: 4, avatarLabel: 'MK',
-      avatarColor: '#008299', isOwner: false,
-    },
-  ];
+  // teams: Team[] = [
+  //   {
+  //     id: 't1', name: 'Engineering', description: 'Core product development',
+  //     memberCount: 8, channelCount: 5, avatarLabel: 'EN',
+  //     avatarColor: '#5b5fc7', isOwner: true,
+  //   },
+  //   {
+  //     id: 't2', name: 'Design', description: 'UI/UX & brand',
+  //     memberCount: 4, channelCount: 3, avatarLabel: 'DS',
+  //     avatarColor: '#237b4b', isOwner: false,
+  //   },
+  //   {
+  //     id: 't3', name: 'Product', description: 'Roadmap & strategy',
+  //     memberCount: 6, channelCount: 4, avatarLabel: 'PR',
+  //     avatarColor: '#d83b01', isOwner: false,
+  //   },
+  //   {
+  //     id: 't4', name: 'Marketing', description: 'Growth & campaigns',
+  //     memberCount: 6, channelCount: 4, avatarLabel: 'MK',
+  //     avatarColor: '#008299', isOwner: false,
+  //   },
+  // ];
 
   readonly channels: Channel[] = [
     {
@@ -190,11 +192,17 @@ export class HomeComponent implements OnInit, OnDestroy {
     'manage-org': 'Manage Organization',
   };
 
+  private readonly AVATAR_COLORS = [
+    '#5b5fc7', '#237b4b', '#d83b01', '#008299', '#b86800', '#744da9',
+  ];
+  teams: Team[] = [];
+
   constructor(
     private readonly authService: AuthService,
     private readonly router: Router,
     private readonly snackBar: MatSnackBar,
     private readonly dialog: MatDialog,
+    private readonly teamService: TeamManagementFetcherService,
   ) {}
 
   ngOnInit(): void {
@@ -203,7 +211,9 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     this.currentUser = this.authService.getCurrentUser();
+    this.teams = [];
     this.isLoading = false;
+    this.loadTeams();
 
     setTimeout(() => {
       gsap.from('.welcome', { y: 16, opacity: 0, duration: 0.35, ease: 'power2.out' });
@@ -214,6 +224,33 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // ── Private helpers ────────────────────────────────────────────────────────
+
+  private loadTeams(): void {
+    this.teamService
+      .getMyTeams()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: page => {
+          this.teams = page.content.map(t => this.mapApiTeam(t));
+        },
+        error: () => { /* keep mock data on error */ },
+      });
+  }
+
+  private mapApiTeam(apiTeam: ApiTeam): Team {
+    return {
+      id: String(apiTeam.id),
+      name: apiTeam.name,
+      description: apiTeam.description ?? '',
+      memberCount: apiTeam.memberCount ?? 0,
+      channelCount: apiTeam.channelCount ?? 0,
+      avatarLabel: apiTeam.name.slice(0, 2).toUpperCase(),
+      avatarColor: this.AVATAR_COLORS[apiTeam.id % this.AVATAR_COLORS.length],
+      isOwner: apiTeam.owner?.id?.toString() === this.currentUser?.id,
+    };
   }
 
   // ── Computed getters ───────────────────────────────────────────────────────
@@ -251,16 +288,24 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ── Event handlers ─────────────────────────────────────────────────────────
 
   onQuickAction(id: string): void {
+    if (id === 'create-team') {
+      this.router.navigate(['/teams/new']);
+      return;
+    }
     const label = this.actionLabels[id] ?? id;
     this.snackBar.open(`${label} — This feature is coming soon.`, 'Dismiss', { duration: 3000 });
   }
 
   onTeamOpen(team: Team): void {
-    this.snackBar.open(`${team.name} — Team page is coming soon.`, 'Dismiss', { duration: 3000 });
+    this.router.navigate(['/teams', team.id]);
   }
 
   onChannelOpen(channel: Channel): void {
     this.snackBar.open(`#${channel.name} — Channel page is coming soon.`, 'Dismiss', { duration: 3000 });
+  }
+
+  onNavigate(path: string): void {
+    this.router.navigate([path]);
   }
 
   onLogout(): void {

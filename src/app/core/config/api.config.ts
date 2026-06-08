@@ -9,8 +9,22 @@ export const API_CONFIG = {
     AUTH: {
       LOGIN: '/auth/login',
       REGISTER: '/auth/register',
-      LOGOUT: '/auth/logout'
-    }
+      LOGOUT: '/auth/logout',
+      REFRESH: '/auth/refresh',
+    },
+    USERS: {
+      ME: '/users/me',
+      PASSWORD: '/users/me/password',
+    },
+    ANALYTICS: {
+      OVERVIEW: '/analytics/overview',
+      ACTIVITY: '/analytics/activity',
+    },
+    TEAMS: {
+      BASE:     '/teams',
+      MY_TEAMS: '/teams/my-teams',
+      SEARCH:   '/teams/search',
+    },
   }
 };
 

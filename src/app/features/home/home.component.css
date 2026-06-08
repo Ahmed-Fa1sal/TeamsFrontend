@@ -94,6 +94,22 @@
   color: #fff;
 }
 
+.topbar__nav-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.14s;
+}
+
+.topbar__nav-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.topbar__nav-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: -2px;
+}
+
 .topbar__end {
   display: flex;
   align-items: center;
@@ -232,6 +248,13 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Menu action items */
+.pp-action-btn {
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  gap: 0.5rem;
 }
 
 /* Sign-out mat-menu-item */
@@ -811,23 +834,78 @@ mat-divider {
   flex-shrink: 0;
 }
 
+.team-row__description {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  color: #605e5c;
+  line-height: 1.4;
+  max-width: 44rem;
+}
+
 .team-row__meta {
-  font-size: 0.76rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
   color: #8a8886;
-  display: block;
-  margin-top: 1px;
+  margin-top: 0.5rem;
+}
+
+.team-row__dot {
+  color: #c8c6c4;
 }
 
 .team-open-btn {
-  opacity: 0;
+  opacity: 1;
   flex-shrink: 0;
-  color: #8a8886;
-  transition: opacity 0.14s, color 0.14s;
+  color: #5b5fc7;
+  transition: transform 0.14s ease;
 }
 
 .team-row:hover .team-open-btn {
-  opacity: 1;
+  transform: translateX(2px);
+}
+
+.teams-empty {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  min-height: 160px;
+  justify-content: center;
+  text-align: left;
+}
+
+.teams-empty__icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: #eef1ff;
   color: #5b5fc7;
+  font-size: 1.25rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.teams-empty__text {
+  margin: 0 0 0.35rem;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #201f1e;
+}
+
+.teams-empty__sub {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #605e5c;
+}
+
+.teams-empty__cta {
+  margin-top: 1rem;
+  text-transform: none !important;
 }
 
 /* ════════════════════════════════════════════════════
