@@ -7,21 +7,40 @@ import {
   inject
 } from '@angular/core';
 import { AuthService } from '@features/auth/services/auth.service';
+import { UserRole } from '@features/auth/models/auth.models';
 
-@Directive({ selector: '[hasRole]', standalone: true })
+/**
+ * Structural directive that renders its host only when the current user
+ * has at least one of the specified roles.
+ *
+ * Usage:
+ *   <div *appHasRole="'admin'">Admin only</div>
+ *   <div *appHasRole="['admin', 'owner']">Admin or Owner</div>
+ */
+@Directive({
+  selector: '[appHasRole]',
+  standalone: true,
+})
 export class HasRoleDirective implements OnInit {
-  @Input('hasRole') role: string | string[] = [];
+  @Input('appHasRole') requiredRoles: UserRole | UserRole[] = [];
 
-  private readonly tpl = inject(TemplateRef<unknown>);
-  private readonly vc = inject(ViewContainerRef);
-  private readonly auth = inject(AuthService);
+  private readonly templateRef = inject(TemplateRef<Record<string, unknown>>);
+  private readonly viewContainer = inject(ViewContainerRef);
+  private readonly authService = inject(AuthService);
 
   ngOnInit(): void {
-    const userRoles: string[] = this.auth.getCurrentUser()?.roles ?? [];
-    const required = Array.isArray(this.role) ? this.role : [this.role];
+    const roles = Array.isArray(this.requiredRoles)
+      ? this.requiredRoles
+      : [this.requiredRoles];
 
-    if (!required.length || required.some(r => userRoles.includes(r))) {
-      this.vc.createEmbeddedView(this.tpl);
+    const user = this.authService.getCurrentUser();
+    const userRoles: UserRole[] = user?.roles?.length ? user.roles : ['member'];
+    const show = roles.length === 0 || roles.some(r => userRoles.includes(r));
+
+    if (show) {
+      this.viewContainer.createEmbeddedView(this.templateRef);
+    } else {
+      this.viewContainer.clear();
     }
   }
 }

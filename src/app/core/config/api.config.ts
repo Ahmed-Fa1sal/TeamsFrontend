@@ -16,6 +16,22 @@ export const API_CONFIG = {
       SEARCH: '/organizations/search',
       MY: '/organizations/my'
     }
+      LOGOUT: '/auth/logout',
+      REFRESH: '/auth/refresh',
+    },
+    USERS: {
+      ME: '/users/me',
+      PASSWORD: '/users/me/password',
+    },
+    ANALYTICS: {
+      OVERVIEW: '/analytics/overview',
+      ACTIVITY: '/analytics/activity',
+    },
+    TEAMS: {
+      BASE:     '/teams',
+      MY_TEAMS: '/teams/my-teams',
+      SEARCH:   '/teams/search',
+    },
   }
 };
 

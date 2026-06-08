@@ -1,6 +1,4 @@
-/**
- * Authentication Models
- */
+export type UserRole = 'admin' | 'owner' | 'member' | 'viewer';
 
 export interface LoginRequest {
   email: string;
@@ -28,7 +26,8 @@ export interface User {
   firstName: string;
   lastName: string;
   username: string;
-  roles?: string[];
+  roles?: UserRole[];
+  avatar?: string;
 }
 
 export interface AuthState {
@@ -38,4 +37,10 @@ export interface AuthState {
   refreshToken: string | null;
   loading: boolean;
   error: string | null;
+}
+
+export interface TokenRefreshResponse {
+  accessToken?: string;
+  token?: string;
+  refreshToken?: string;
 }

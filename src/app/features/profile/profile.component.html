@@ -1,0 +1,184 @@
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar__brand">
+    <div class="topbar__logo" aria-hidden="true">T</div>
+    <span class="topbar__product">Teams</span>
+  </div>
+
+  <nav class="topbar__nav" aria-label="Primary navigation">
+    <button type="button" class="topbar__nav-item topbar__nav-btn" (click)="onNavigate('/home')">
+      <i class="pi pi-th-large" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Home</span>
+    </button>
+    <button type="button" class="topbar__nav-item topbar__nav-btn" (click)="onNavigate('/dashboard')">
+      <i class="pi pi-chart-bar" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Analytics</span>
+    </button>
+    <span class="topbar__nav-item topbar__nav-item--active" aria-current="page">
+      <i class="pi pi-user" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Profile</span>
+    </span>
+  </nav>
+
+  <div class="topbar__end">
+    <button
+      type="button"
+      class="topbar__profile-btn"
+      [matMenuTriggerFor]="profileMenu"
+      aria-label="User menu"
+    >
+      <div class="av-circle av-circle--sm topbar-av" aria-hidden="true">{{ userInitials }}</div>
+      <div class="topbar__user-info">
+        <span class="topbar__user-name">{{ fullName }}</span>
+        <span class="topbar__user-sub">{{ currentUser?.username }}</span>
+      </div>
+      <i class="pi pi-chevron-down topbar__caret" aria-hidden="true"></i>
+    </button>
+
+    <mat-menu #profileMenu="matMenu" xPosition="before" class="profile-panel">
+      <div
+        class="pp-body"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+      >
+        <div class="pp-user">
+          <div class="av-circle av-circle--lg pp-av" aria-hidden="true">{{ userInitials }}</div>
+          <div class="pp-user-info">
+            <span class="pp-name">{{ fullName }}</span>
+            <span class="pp-email">{{ currentUser?.email }}</span>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+        <button type="button" mat-menu-item [disabled]="isLoggingOut" (click)="onLogout()" class="pp-signout-btn">
+          <i class="pi pi-sign-out" aria-hidden="true"></i>
+          <span>{{ isLoggingOut ? 'Signing out…' : 'Sign out' }}</span>
+        </button>
+      </div>
+    </mat-menu>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="profile-main">
+
+  <!-- IDENTITY CARD -->
+  <section class="profile-card profile-hero" aria-label="User identity">
+    <div class="av-circle av-circle--hero" aria-hidden="true">{{ userInitials }}</div>
+    <div class="profile-hero__info">
+      <h1>{{ fullName }}</h1>
+      <span class="profile-hero__email">{{ currentUser?.email }}</span>
+      <div class="profile-hero__roles">
+        <span *ngFor="let role of userRoles" class="role-badge role-badge--{{ role }}">
+          {{ getRoleLabel(role) }}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- EDIT PROFILE -->
+  <section class="profile-card card" aria-labelledby="edit-heading">
+    <div class="card__head">
+      <div class="card__head-l">
+        <span class="card__icon card__icon--purple">
+          <i class="pi pi-pencil" aria-hidden="true"></i>
+        </span>
+        <h2 class="card__title" id="edit-heading">Edit Profile</h2>
+      </div>
+    </div>
+
+    <form [formGroup]="profileForm" (ngSubmit)="onSaveProfile()" class="pf-form">
+      <div class="pf-row">
+        <mat-form-field appearance="outline" class="pf-field">
+          <mat-label>First Name</mat-label>
+          <input matInput formControlName="firstName" autocomplete="given-name" />
+          <mat-error *ngIf="profileForm.get('firstName')?.hasError('required')">Required</mat-error>
+          <mat-error *ngIf="profileForm.get('firstName')?.hasError('minlength')">Min 2 characters</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="pf-field">
+          <mat-label>Last Name</mat-label>
+          <input matInput formControlName="lastName" autocomplete="family-name" />
+          <mat-error *ngIf="profileForm.get('lastName')?.hasError('required')">Required</mat-error>
+          <mat-error *ngIf="profileForm.get('lastName')?.hasError('minlength')">Min 2 characters</mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="pf-field pf-field--full">
+        <mat-label>Username</mat-label>
+        <input matInput formControlName="username" autocomplete="username" />
+        <mat-error *ngIf="profileForm.get('username')?.hasError('required')">Required</mat-error>
+        <mat-error *ngIf="profileForm.get('username')?.hasError('minlength')">Min 3 characters</mat-error>
+        <mat-error *ngIf="profileForm.get('username')?.hasError('pattern')">Letters, numbers and _ only</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="pf-field pf-field--full">
+        <mat-label>Email</mat-label>
+        <input matInput formControlName="email" autocomplete="email" />
+        <mat-hint>Email cannot be changed here</mat-hint>
+      </mat-form-field>
+
+      <div class="pf-actions">
+        <button
+          type="submit"
+          mat-flat-button
+          color="primary"
+          [disabled]="profileForm.invalid || isSavingProfile"
+          class="pf-submit-btn"
+        >
+          <mat-spinner *ngIf="isSavingProfile" diameter="16" class="btn-spinner"></mat-spinner>
+          {{ isSavingProfile ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- CHANGE PASSWORD -->
+  <section class="profile-card card" aria-labelledby="pwd-heading">
+    <div class="card__head">
+      <div class="card__head-l">
+        <span class="card__icon card__icon--gray">
+          <i class="pi pi-lock" aria-hidden="true"></i>
+        </span>
+        <h2 class="card__title" id="pwd-heading">Change Password</h2>
+      </div>
+    </div>
+
+    <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()" class="pf-form">
+      <mat-form-field appearance="outline" class="pf-field pf-field--full">
+        <mat-label>Current Password</mat-label>
+        <input matInput type="password" formControlName="currentPassword" autocomplete="current-password" />
+        <mat-error *ngIf="passwordForm.get('currentPassword')?.hasError('required')">Required</mat-error>
+        <mat-error *ngIf="passwordForm.get('currentPassword')?.hasError('minlength')">Min 6 characters</mat-error>
+      </mat-form-field>
+
+      <div class="pf-row">
+        <mat-form-field appearance="outline" class="pf-field">
+          <mat-label>New Password</mat-label>
+          <input matInput type="password" formControlName="newPassword" autocomplete="new-password" />
+          <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('required')">Required</mat-error>
+          <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('minlength')">Min 8 characters</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="pf-field">
+          <mat-label>Confirm Password</mat-label>
+          <input matInput type="password" formControlName="confirmPassword" autocomplete="new-password" />
+          <mat-error *ngIf="passwordForm.hasError('mismatch') && passwordForm.get('confirmPassword')?.dirty">
+            Passwords do not match
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="pf-actions">
+        <button
+          type="submit"
+          mat-flat-button
+          color="primary"
+          [disabled]="passwordForm.invalid || isChangingPassword"
+          class="pf-submit-btn"
+        >
+          <mat-spinner *ngIf="isChangingPassword" diameter="16" class="btn-spinner"></mat-spinner>
+          {{ isChangingPassword ? 'Changing…' : 'Change Password' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+</main>
