@@ -17,7 +17,11 @@ import gsap from 'gsap';
 
 import { AuthService } from '../auth/services/auth.service';
 import { User } from '../auth/models/auth.models';
+import { PermissionService } from '@core/services/permission.service';
+import { HasSystemRoleDirective } from '@shared/directives/has-system-role.directive';
+import { SystemRole, OrganizationRole } from '@core/auth/roles';
 import { TeamManagementFetcherService } from '../teams/services/team-management-fetcher.service';
+import { OrganizationService } from '../organizations/services/organization.service';
 import { Team as ApiTeam } from '../teams/models/team.models';
 import {
   ConfirmDialogComponent,
@@ -79,6 +83,7 @@ interface QuickAction {
     MatDialogModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
+    HasSystemRoleDirective,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
@@ -87,10 +92,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   isLoading = true;
   isLoggingOut = false;
+  private managedOrgId: number | null = null;
 
   private readonly destroy$ = new Subject<void>();
 
   // ── Mock data (replace with real service calls once APIs are ready) ──
+
+  readonly SystemRole = SystemRole;
 
   readonly organization: Organization = {
     id: 'org-1',
@@ -203,6 +211,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     private readonly snackBar: MatSnackBar,
     private readonly dialog: MatDialog,
     private readonly teamService: TeamManagementFetcherService,
+    private readonly orgService: OrganizationService,
+    readonly permissions: PermissionService,
   ) {}
 
   ngOnInit(): void {
@@ -211,9 +221,13 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     this.currentUser = this.authService.getCurrentUser();
+    console.log('[Home] currentUser:', this.currentUser);
+    console.log('[Home] system roles:', this.currentUser?.roles);
+
     this.teams = [];
     this.isLoading = false;
     this.loadTeams();
+    this.loadOrgContext();
 
     setTimeout(() => {
       gsap.from('.welcome', { y: 16, opacity: 0, duration: 0.35, ease: 'power2.out' });
@@ -222,6 +236,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.permissions.clearOrgContext();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -235,8 +250,41 @@ export class HomeComponent implements OnInit, OnDestroy {
       .subscribe({
         next: page => {
           this.teams = page.content.map(t => this.mapApiTeam(t));
+          console.log('[Home] teams loaded:', this.teams.map(t => ({ id: t.id, name: t.name, isOwner: t.isOwner })));
+          console.log('[Home] isTeamOwner:', this.isTeamOwner);
         },
-        error: () => { /* keep mock data on error */ },
+        error: () => { /* keep empty list on error */ },
+      });
+  }
+
+  private loadOrgContext(): void {
+    this.orgService.getMyOrganizations({ page: 0, size: 1 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: page => {
+          const firstOrg = page.content[0];
+          if (!firstOrg || !this.currentUser?.id) {
+            console.log('[Home] no org found or no user id — skipping org context');
+            return;
+          }
+          const userId = Number(this.currentUser.id);
+          this.orgService.getMember(firstOrg.id, userId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: membership => {
+                const orgRole = membership.role as unknown as OrganizationRole;
+                console.log('[Home] org context set →', orgRole, '| orgId:', firstOrg.id, '| org:', firstOrg.name, '| userId:', userId);
+                this.permissions.setOrgContext(orgRole, firstOrg.id);
+                this.managedOrgId = firstOrg.id;
+                this.permissions.logState();
+              },
+              error: () => {
+                this.permissions.clearOrgContext();
+                console.log('[Home] user is not a member of org', firstOrg.id, '— org context cleared');
+              }
+            });
+        },
+        error: err => console.warn('[Home] failed to load orgs:', err)
       });
   }
 
@@ -249,7 +297,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       channelCount: apiTeam.channelCount ?? 0,
       avatarLabel: apiTeam.name.slice(0, 2).toUpperCase(),
       avatarColor: this.AVATAR_COLORS[apiTeam.id % this.AVATAR_COLORS.length],
-      isOwner: apiTeam.owner?.id?.toString() === this.currentUser?.id,
+      isOwner: apiTeam.owner?.id != null && this.currentUser?.id != null &&
+               String(apiTeam.owner.id) === String(this.currentUser.id),
     };
   }
 
@@ -285,11 +334,66 @@ export class HomeComponent implements OnInit, OnDestroy {
     return this.channels.reduce((sum, c) => sum + c.unreadCount, 0);
   }
 
+  // ── Role helpers (used in template) ───────────────────────────────────────
+
+  /** True when the logged-in user has the SYSTEM_ADMIN role. */
+  get isSystemAdmin(): boolean {
+    return this.permissions.isSystemAdmin();
+  }
+
+  /** True when the user is OWNER of at least one loaded team. */
+  get isTeamOwner(): boolean {
+    return this.teams.some(t => t.isOwner);
+  }
+
+  /**
+   * True when the user may create a new team.
+   * MEMBER role cannot manage teams; only SYSTEM_ADMIN, ORG_ADMIN, and
+   * existing team owners (who have already been entrusted with teams) may do so.
+   */
+  get canCreateTeam(): boolean {
+    return (
+      this.isSystemAdmin ||
+      this.permissions.canManageOrganization() ||
+      this.isTeamOwner
+    );
+  }
+
+  /**
+   * Quick actions visible to the current user:
+   * - SYSTEM_ADMIN → all actions (including manage-orgs)
+   * - Team owner/admin → team & channel management (no manage-orgs)
+   * - Regular member → collaboration actions only (create-channel)
+   */
+  get visibleQuickActions(): QuickAction[] {
+    // SYSTEM_ADMIN and ORG_ADMIN can manage the org — show all actions
+    if (this.isSystemAdmin || this.permissions.canManageOrganization()) return this.quickActions;
+    // Team owners/admins can manage teams but not the org
+    if (this.isTeamOwner) return this.quickActions.filter(a => a.id !== 'manage-org');
+    // Regular members: only create-channel
+    return this.quickActions.filter(a => a.id === 'create-channel');
+  }
+
   // ── Event handlers ─────────────────────────────────────────────────────────
 
   onQuickAction(id: string): void {
     if (id === 'create-team') {
       this.router.navigate(['/teams/new']);
+      return;
+    }
+    if (id === 'manage-org') {
+      if (this.isSystemAdmin) {
+        // SYSTEM_ADMIN sees the full org list
+        this.router.navigate(['/organizations']);
+      } else {
+        // ORG_ADMIN goes directly to their own org's detail page
+        const orgId = this.managedOrgId ?? this.permissions.managedOrgId;
+        if (orgId) {
+          this.router.navigate(['/organizations', orgId]);
+        } else {
+          this.snackBar.open('Organization not found. Please try again.', 'Dismiss', { duration: 3000 });
+        }
+      }
       return;
     }
     const label = this.actionLabels[id] ?? id;

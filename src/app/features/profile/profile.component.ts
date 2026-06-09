@@ -23,7 +23,8 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import gsap from 'gsap';
 
 import { AuthService } from '@features/auth/services/auth.service';
-import { User, UserRole } from '@features/auth/models/auth.models';
+import { User } from '@features/auth/models/auth.models';
+import { SystemRole } from '@core/auth/roles';
 import { ProfileService } from './services/profile.service';
 import {
   ConfirmDialogComponent,
@@ -101,13 +102,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
       || this.currentUser.username;
   }
 
-  get userRoles(): UserRole[] {
-    return this.currentUser?.roles?.length ? this.currentUser.roles : ['member'];
+  get userRoles(): SystemRole[] {
+    return this.currentUser?.roles ?? [];
   }
 
-  getRoleLabel(role: UserRole): string {
-    const map: Record<UserRole, string> = {
-      admin: 'Admin', owner: 'Owner', member: 'Member', viewer: 'Viewer',
+  getRoleLabel(role: SystemRole): string {
+    const map: Record<SystemRole, string> = {
+      [SystemRole.SYSTEM_ADMIN]: 'System Admin',
     };
     return map[role] ?? role;
   }

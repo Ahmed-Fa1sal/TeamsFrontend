@@ -4,6 +4,7 @@ import {
   OnDestroy,
   OnInit,
   computed,
+  effect,
   inject,
   signal
 } from '@angular/core';
@@ -27,6 +28,7 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { OrganizationService } from '../../services/organization.service';
 import { AuthService } from '@features/auth/services/auth.service';
+import { PermissionService } from '@core/services/permission.service';
 import {
   AddOrganizationMemberRequest,
   OrganizationMemberResponse,
@@ -34,6 +36,7 @@ import {
   OrganizationResponse,
   UpdateMemberRoleRequest
 } from '../../models/organization.model';
+import { OrganizationRole } from '@core/auth/roles';
 import { FormErrorComponent } from '@shared/components/form-error/form-error.component';
 import { OrgRoleLabelPipe, ROLE_LABELS } from '../../pipes/org-role-label.pipe';
 import {
@@ -74,6 +77,7 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly orgService = inject(OrganizationService);
   private readonly authService = inject(AuthService);
+  private readonly permissions = inject(PermissionService);
   private readonly dialogService = inject(DialogService);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
@@ -98,9 +102,7 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
   ];
 
   readonly currentUserId = computed(() => Number(this.authService.getCurrentUser()?.id ?? 0));
-  readonly isSystemAdmin = computed(
-    () => this.authService.getCurrentUser()?.roles?.includes('admin') ?? false
-  );
+  readonly isSystemAdmin = computed(() => this.permissions.isSystemAdmin());
   readonly currentMembership = computed(() =>
     this.members().find(m => m.userId === this.currentUserId())
   );
@@ -108,6 +110,18 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
     this.isSystemAdmin() ||
     this.currentMembership()?.role === OrganizationMemberRole.ORG_ADMIN
   );
+
+  // Sync current user's org membership into PermissionService so guards/directives work.
+  private readonly _syncOrgContext = effect(() => {
+    const membership = this.currentMembership();
+    if (membership) {
+      console.log('[OrgDetail] setOrgContext → role:', membership.role, '| orgId:', this.orgId(), '| userId:', membership.userId);
+      this.permissions.setOrgContext(membership.role as unknown as OrganizationRole, this.orgId());
+    } else {
+      this.permissions.clearOrgContext();
+    }
+  });
+
   readonly canLeave = computed(() => {
     const role = this.currentMembership()?.role;
     return role !== undefined && role !== OrganizationMemberRole.ORG_ADMIN;
@@ -247,7 +261,11 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
       header: 'Change Role',
       width: '380px',
       modal: true,
-      data: { currentRole: member.role, memberName: member.fullName } satisfies UpdateRoleDialogData
+      data: {
+        currentRole: member.role,
+        memberName: member.fullName,
+        canAssignOrgAdmin: this.isSystemAdmin()
+      } satisfies UpdateRoleDialogData
     });
 
     this.dialogRef.onClose.pipe(takeUntil(this.destroy$)).subscribe(
@@ -304,7 +322,8 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
           .subscribe({
             next: () => {
               this.messageService.add({ severity: 'info', summary: 'Left', detail: 'You have left the organization' });
-              this.router.navigate(['/organizations']);
+              // Non-admins cannot access the org list page; send them home.
+              this.router.navigate([this.isSystemAdmin() ? '/organizations' : '/home']);
             },
             error: err =>
               this.messageService.add({ severity: 'error', summary: 'Error', detail: err.error?.message ?? 'Failed to leave' })
@@ -320,10 +339,12 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/organizations']);
+    // SYSTEM_ADMIN has the org list; everyone else goes home.
+    this.router.navigate([this.isSystemAdmin() ? '/organizations' : '/home']);
   }
 
   ngOnDestroy(): void {
+    this.permissions.clearOrgContext();
     this.dialogRef?.close();
     this.destroy$.next();
     this.destroy$.complete();

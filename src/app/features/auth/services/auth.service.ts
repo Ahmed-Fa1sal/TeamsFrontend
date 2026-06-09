@@ -60,6 +60,8 @@ export class AuthService {
             lastName: '',
             username: credentials.email.split('@')[0],
           };
+        console.log('[AuthService] login payload:', payload);
+        console.log('[AuthService] resolved user:', user);
         if (!token) {
           this.updateAuthState({
             ...this.authState$.value,
@@ -69,6 +71,7 @@ export class AuthService {
           });
           return;
         }
+        console.log('[AuthService] login success | roles:', user.roles);
         this.updateAuthState({
           isAuthenticated: true,
           user,

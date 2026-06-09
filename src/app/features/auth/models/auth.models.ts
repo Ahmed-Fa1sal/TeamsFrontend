@@ -1,4 +1,5 @@
-export type UserRole = 'admin' | 'owner' | 'member' | 'viewer';
+export { SystemRole } from '@core/auth/roles';
+export type UserRole = import('@core/auth/roles').SystemRole;
 
 export interface LoginRequest {
   email: string;
@@ -26,7 +27,7 @@ export interface User {
   firstName: string;
   lastName: string;
   username: string;
-  roles?: UserRole[];
+  roles?: import('@core/auth/roles').SystemRole[];
   avatar?: string;
 }
 

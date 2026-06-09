@@ -158,11 +158,12 @@
       </button>
 
       <div class="action-bar__right">
+        <!-- Unarchive: Team OWNER/ADMIN, ORG_ADMIN, SYSTEM_ADMIN -->
         <button
           type="button"
           mat-stroked-button
           class="btn-unarchive"
-          *ngIf="team!.archived"
+          *ngIf="team!.archived && canManageThisTeam"
           [disabled]="isActing"
           (click)="onUnarchive()"
           matTooltip="Restore this team to active"
@@ -171,10 +172,12 @@
           Unarchive
         </button>
 
+        <!-- Create Channel: Team OWNER/ADMIN, ORG_ADMIN, SYSTEM_ADMIN -->
         <button
           type="button"
           mat-flat-button
           class="btn-create-channel"
+          *ngIf="canManageThisTeam"
           [disabled]="isActing || team!.archived"
           (click)="openCreateChannel()"
           matTooltip="Create a new channel in this team"
@@ -183,11 +186,12 @@
           Create channel
         </button>
 
+        <!-- Archive: Team OWNER/ADMIN, ORG_ADMIN, SYSTEM_ADMIN -->
         <button
           type="button"
           mat-stroked-button
           class="btn-archive"
-          *ngIf="!team!.archived"
+          *ngIf="!team!.archived && canManageThisTeam"
           [disabled]="isActing"
           (click)="onArchive()"
           matTooltip="Archive this team"
@@ -196,10 +200,12 @@
           Archive
         </button>
 
+        <!-- Delete: Team OWNER, ORG_ADMIN, SYSTEM_ADMIN only (not ADMIN) -->
         <button
           type="button"
           mat-flat-button
           class="btn-delete"
+          *ngIf="canDeleteThisTeam"
           [disabled]="isActing"
           (click)="onDelete()"
           matTooltip="Permanently delete this team"

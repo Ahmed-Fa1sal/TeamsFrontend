@@ -31,6 +31,8 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { OrganizationService } from '../../services/organization.service';
 import { AuthService } from '@features/auth/services/auth.service';
+import { PermissionService } from '@core/services/permission.service';
+import { SystemRole } from '@core/auth/roles';
 import { OrganizationResponse } from '../../models/organization.model';
 import { HasRoleDirective } from '@shared/directives/has-role.directive';
 import { FormErrorComponent } from '@shared/components/form-error/form-error.component';
@@ -71,6 +73,7 @@ import { CreateOrganizationRequest } from '../../models/organization.model';
 export class OrganizationListComponent implements OnInit, OnDestroy {
     private readonly orgService = inject(OrganizationService);
     private readonly authService = inject(AuthService);
+    private readonly permissions = inject(PermissionService);
     private readonly dialogService = inject(DialogService);
     private readonly messageService = inject(MessageService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -78,6 +81,8 @@ export class OrganizationListComponent implements OnInit, OnDestroy {
     private readonly cdr = inject(ChangeDetectorRef);
     private readonly destroy$ = new Subject<void>();
     private dialogRef: DynamicDialogRef | null = null;
+
+    readonly SystemRole = SystemRole;
 
     readonly organizations = signal<OrganizationResponse[]>([]);
     readonly loading = signal(false);
@@ -90,9 +95,7 @@ export class OrganizationListComponent implements OnInit, OnDestroy {
 
     readonly searchControl = new FormControl('');
 
-    readonly isSystemAdmin = computed(
-        () => this.authService.getCurrentUser()?.roles?.includes('admin') ?? false
-    );
+    readonly isSystemAdmin = computed(() => this.permissions.isSystemAdmin());
 
     ngOnInit(): void {
         this.searchControl.valueChanges.pipe(

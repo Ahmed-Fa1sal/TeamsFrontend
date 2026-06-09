@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuardFn } from '@core/guards/auth.guard';
+import { systemAdminGuard } from '@core/guards/system-admin.guard';
+import { orgAccessGuard } from '@core/guards/org-access.guard';
 
 export const APP_ROUTES: Routes = [
   {
@@ -51,24 +53,31 @@ export const APP_ROUTES: Routes = [
     path: 'channels/:id',
     loadComponent: () =>
       import('@features/channels/channel-chat/channel-chat.component').then(m => m.ChannelChatComponent),
-    canActivate: [authGuardFn]
+    canActivate: [authGuardFn],
   },
-    {
+  {
+    // Only SYSTEM_ADMIN may see the full list of all organizations
     path: 'organizations',
     loadComponent: () =>
       import('@features/organizations/pages/organization-list/organization-list.component')
         .then(m => m.OrganizationListComponent),
-    canActivate: [authGuardFn]
+    canActivate: [systemAdminGuard],
   },
   {
+    // SYSTEM_ADMIN → any org; authenticated member → only their own org
     path: 'organizations/:id',
     loadComponent: () =>
       import('@features/organizations/pages/organization-detail/organization-detail.component')
         .then(m => m.OrganizationDetailComponent),
-    canActivate: [authGuardFn]
+    canActivate: [orgAccessGuard],
   },
+  // Example: future admin-only pages use systemAdminGuard
+  // { path: 'admin', ..., canActivate: [systemAdminGuard] },
   {
     path: '**',
     redirectTo: 'login',
   },
 ];
+
+// Re-export for use in other guards/tests
+export { systemAdminGuard };
