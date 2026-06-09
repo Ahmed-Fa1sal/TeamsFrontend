@@ -46,6 +46,14 @@ export class TeamManagementFetcherService {
       .pipe(map(r => this.unwrapResponse(r)));
   }
 
+  getMyChannels(params?: TeamQueryParams): Observable<SpringPage<Channel>> {
+    return this.http
+      .get<ApiResponse<SpringPage<Channel>>>(getApiUrl('/channels/my-channels'), {
+        params: this.buildPageParams(params),
+      })
+      .pipe(map(r => this.unwrapResponse(r)));
+  }
+
   getChannelsForTeam(teamId: number, params?: TeamQueryParams): Observable<SpringPage<Channel>> {
     return this.http
       .get<ApiResponse<SpringPage<Channel>>>(getApiUrl(`${API_CONFIG.ENDPOINTS.CHANNELS}/team/${teamId}`), {
