@@ -69,7 +69,7 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
     private readonly dialog: MatDialog,
     private readonly teamService: TeamManagementFetcherService,
     private readonly authService: AuthService,
-    private readonly permissions: PermissionService,
+    readonly permissions: PermissionService,
   ) {}
 
   ngOnInit(): void {
@@ -277,6 +277,28 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
     this.channelName = '';
     this.channelDescription = '';
     this.channelIsPublic = true;
+  }
+
+  // ── Permission getters for the template ──────────────────────────────────
+
+  /**
+   * True for SYSTEM_ADMIN, ORG_ADMIN, Team OWNER, Team ADMIN.
+   * Controls: Create Channel, Archive, Unarchive, manage member actions.
+   */
+  get canManageThisTeam(): boolean {
+    return this.permissions.canManageTeam();
+  }
+
+  /**
+   * True for SYSTEM_ADMIN, ORG_ADMIN, and Team OWNER only.
+   * ADMIN can manage members but cannot delete the team.
+   */
+  get canDeleteThisTeam(): boolean {
+    return (
+      this.permissions.isSystemAdmin() ||
+      this.permissions.canManageOrganization() ||
+      this.permissions.hasTeamRole(TeamRole.OWNER)
+    );
   }
 
   get avatarLabel(): string {

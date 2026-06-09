@@ -92,6 +92,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   isLoading = true;
   isLoggingOut = false;
+  private managedOrgId: number | null = null;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -272,8 +273,9 @@ export class HomeComponent implements OnInit, OnDestroy {
             .subscribe({
               next: membership => {
                 const orgRole = membership.role as unknown as OrganizationRole;
-                console.log('[Home] org context set →', orgRole, '| org:', firstOrg.name, '| userId:', userId);
-                this.permissions.setOrgContext(orgRole);
+                console.log('[Home] org context set →', orgRole, '| orgId:', firstOrg.id, '| org:', firstOrg.name, '| userId:', userId);
+                this.permissions.setOrgContext(orgRole, firstOrg.id);
+                this.managedOrgId = firstOrg.id;
                 this.permissions.logState();
               },
               error: () => {
@@ -345,6 +347,19 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * True when the user may create a new team.
+   * MEMBER role cannot manage teams; only SYSTEM_ADMIN, ORG_ADMIN, and
+   * existing team owners (who have already been entrusted with teams) may do so.
+   */
+  get canCreateTeam(): boolean {
+    return (
+      this.isSystemAdmin ||
+      this.permissions.canManageOrganization() ||
+      this.isTeamOwner
+    );
+  }
+
+  /**
    * Quick actions visible to the current user:
    * - SYSTEM_ADMIN → all actions (including manage-orgs)
    * - Team owner/admin → team & channel management (no manage-orgs)
@@ -367,7 +382,18 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     if (id === 'manage-org') {
-      this.router.navigate(['/organizations']);
+      if (this.isSystemAdmin) {
+        // SYSTEM_ADMIN sees the full org list
+        this.router.navigate(['/organizations']);
+      } else {
+        // ORG_ADMIN goes directly to their own org's detail page
+        const orgId = this.managedOrgId ?? this.permissions.managedOrgId;
+        if (orgId) {
+          this.router.navigate(['/organizations', orgId]);
+        } else {
+          this.snackBar.open('Organization not found. Please try again.', 'Dismiss', { duration: 3000 });
+        }
+      }
       return;
     }
     const label = this.actionLabels[id] ?? id;

@@ -115,8 +115,8 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
   private readonly _syncOrgContext = effect(() => {
     const membership = this.currentMembership();
     if (membership) {
-      console.log('[OrgDetail] setOrgContext →', membership.role, '| userId:', membership.userId);
-      this.permissions.setOrgContext(membership.role as unknown as OrganizationRole);
+      console.log('[OrgDetail] setOrgContext → role:', membership.role, '| orgId:', this.orgId(), '| userId:', membership.userId);
+      this.permissions.setOrgContext(membership.role as unknown as OrganizationRole, this.orgId());
     } else {
       this.permissions.clearOrgContext();
     }
@@ -261,7 +261,11 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
       header: 'Change Role',
       width: '380px',
       modal: true,
-      data: { currentRole: member.role, memberName: member.fullName } satisfies UpdateRoleDialogData
+      data: {
+        currentRole: member.role,
+        memberName: member.fullName,
+        canAssignOrgAdmin: this.isSystemAdmin()
+      } satisfies UpdateRoleDialogData
     });
 
     this.dialogRef.onClose.pipe(takeUntil(this.destroy$)).subscribe(
@@ -318,7 +322,8 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
           .subscribe({
             next: () => {
               this.messageService.add({ severity: 'info', summary: 'Left', detail: 'You have left the organization' });
-              this.router.navigate(['/organizations']);
+              // Non-admins cannot access the org list page; send them home.
+              this.router.navigate([this.isSystemAdmin() ? '/organizations' : '/home']);
             },
             error: err =>
               this.messageService.add({ severity: 'error', summary: 'Error', detail: err.error?.message ?? 'Failed to leave' })
@@ -334,7 +339,8 @@ export class OrganizationDetailComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/organizations']);
+    // SYSTEM_ADMIN has the org list; everyone else goes home.
+    this.router.navigate([this.isSystemAdmin() ? '/organizations' : '/home']);
   }
 
   ngOnDestroy(): void {

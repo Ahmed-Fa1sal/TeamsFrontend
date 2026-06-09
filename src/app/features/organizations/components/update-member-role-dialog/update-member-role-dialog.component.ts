@@ -17,6 +17,8 @@ import { ROLE_LABELS } from '../../pipes/org-role-label.pipe';
 export interface UpdateRoleDialogData {
   currentRole: OrganizationMemberRole;
   memberName: string;
+  /** Only SYSTEM_ADMIN may assign the ORG_ADMIN role. */
+  canAssignOrgAdmin: boolean;
 }
 
 @Component({
@@ -32,11 +34,16 @@ export interface UpdateRoleDialogData {
   styleUrls: ['./update-member-role-dialog.component.css']
 })
 export class UpdateMemberRoleDialogComponent {
-  private readonly ref = inject(DynamicDialogRef);
+  private readonly ref    = inject(DynamicDialogRef);
   private readonly config = inject(DynamicDialogConfig);
 
   readonly dialogData: UpdateRoleDialogData = this.config.data;
-  readonly roleOptions = Object.values(OrganizationMemberRole).map(r => ({ label: ROLE_LABELS[r], value: r }));
+
+  /** ORG_ADMIN role is only offered when the caller is SYSTEM_ADMIN. */
+  readonly roleOptions = Object.values(OrganizationMemberRole)
+    .filter(r => r !== OrganizationMemberRole.ORG_ADMIN || this.dialogData.canAssignOrgAdmin)
+    .map(r => ({ label: ROLE_LABELS[r], value: r }));
+
   readonly selectedRole = signal<OrganizationMemberRole>(this.dialogData.currentRole);
 
   confirm(): void {

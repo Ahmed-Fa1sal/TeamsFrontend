@@ -303,6 +303,7 @@
             <h2 class="card__title" id="teams-heading">My Teams</h2>
           </div>
           <button
+            *ngIf="canCreateTeam"
             type="button"
             mat-button
             class="head-action-btn"
@@ -359,7 +360,7 @@
             <div>
               <p class="teams-empty__text">You don’t have any teams yet.</p>
               <p class="teams-empty__sub">Create your first team to start collaborating with your organization.</p>
-              <button type="button" mat-flat-button color="primary" class="teams-empty__cta" (click)="onQuickAction('create-team')">
+              <button *ngIf="canCreateTeam" type="button" mat-flat-button color="primary" class="teams-empty__cta" (click)="onQuickAction('create-team')">
                 Create new team
               </button>
             </div>

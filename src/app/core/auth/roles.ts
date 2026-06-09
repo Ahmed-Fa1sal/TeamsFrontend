@@ -1,6 +1,6 @@
 /** System-level role stored in AuthResponse.user.roles */
 export enum SystemRole {
-  SYSTEM_ADMIN = 'SYSTEM_ADMIN'
+  SYSTEM_ADMIN = 'ROLE_SYSTEM_ADMIN'
 }
 
 /** Organization membership role from OrganizationMemberResponse.role */
