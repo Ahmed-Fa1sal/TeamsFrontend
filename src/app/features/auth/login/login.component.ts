@@ -1,16 +1,20 @@
-import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
+/**
+ * Login Component
+ * Standalone component for user login
+ */
+
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
-import gsap from 'gsap';
+// PrimeNG Imports
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { CardModule } from 'primeng/card';
+import { MessagesModule } from 'primeng/messages';
 
 import { AuthService } from '../services/auth.service';
 
@@ -21,40 +25,34 @@ import { AuthService } from '../services/auth.service';
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
-    MatButtonModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatProgressSpinnerModule,
+    ButtonModule,
+    InputTextModule,
+    CardModule,
+    MessagesModule
   ],
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css']
+  styleUrl: './login.component.css'
 })
-export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
+export class LoginComponent implements OnInit, OnDestroy {
   loginForm!: FormGroup;
   isLoading = false;
   showPassword = false;
-  errorMessage: string | null = null;
-  private returnUrl = '/home';
-  private readonly destroy$ = new Subject<void>();
+  messages: any[] = [];
+  private destroy$ = new Subject<void>();
 
   constructor(
-    private readonly fb: FormBuilder,
-    private readonly authService: AuthService,
-    private readonly router: Router,
-    private readonly route: ActivatedRoute
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router
   ) {
     this.initializeForm();
   }
 
   ngOnInit(): void {
-    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/home';
+    // Redirect if already logged in
     if (this.authService.isAuthenticated()) {
-      this.router.navigateByUrl(this.returnUrl);
+      this.router.navigate(['/home']);
     }
-  }
-
-  ngAfterViewInit(): void {
-    gsap.from('.auth-panel', { y: 32, opacity: 0, duration: 0.45, ease: 'power2.out' });
   }
 
   ngOnDestroy(): void {
@@ -73,36 +71,41 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * Handle login form submission
+   */
   onLogin(): void {
-    this.loginForm.markAllAsTouched();
     if (this.loginForm.invalid) {
       return;
     }
 
     this.isLoading = true;
-    this.errorMessage = null;
+    this.messages = [];
 
     this.authService
       .login(this.loginForm.value)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response) => {
+        next: () => {
           this.isLoading = false;
-
-          if (this.authService.isAuthenticated()) {
-            this.router.navigateByUrl(this.returnUrl);
-            return;
-          }
-
-          this.errorMessage = response?.message || 'Invalid credentials';
+          this.router.navigate(['/home']);
         },
         error: (error) => {
           this.isLoading = false;
-          this.errorMessage = error?.error?.message || 'Invalid credentials';
+          this.messages = [
+            {
+              severity: 'error',
+              summary: 'Login Failed',
+              detail: error?.error?.message || 'Invalid credentials'
+            }
+          ];
         }
       });
   }
 
+  /**
+   * Get field error message
+   */
   getFieldError(fieldName: string): string | null {
     const field = this.loginForm.get(fieldName);
     if (!field || !field.errors || !field.touched) {
@@ -118,7 +121,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (field.hasError('minlength')) {
-      return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be at least ${field.errors?.['minlength']?.requiredLength} characters`;
+      return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be at least ${field.errors['minlength'].requiredLength} characters`;
     }
 
     return null;

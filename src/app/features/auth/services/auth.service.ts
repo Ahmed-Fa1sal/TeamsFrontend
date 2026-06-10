@@ -1,54 +1,77 @@
+/**
+ * Authentication Service
+ * Manages authentication state and API calls
+ */
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import { catchError, filter, map, take, tap } from 'rxjs/operators';
+import { tap, catchError } from 'rxjs/operators';
 import { getApiUrl } from '@core/config/api.config';
 import {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
   AuthState,
-  User,
-  TokenRefreshResponse,
+  User
 } from '../models/auth.models';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class AuthService {
   private readonly STORAGE_KEY = 'auth_state';
-  private readonly authState$ = new BehaviorSubject<AuthState>(this.getInitialState());
+  private authState$ = new BehaviorSubject<AuthState>(this.getInitialState());
 
-  // Token-refresh concurrency guard
-  private isRefreshing = false;
-  private readonly tokenSubject$ = new BehaviorSubject<string | null>(null);
-
-  constructor(private readonly http: HttpClient) {
+  constructor(private http: HttpClient) {
     this.loadAuthState();
   }
 
+  /**
+   * Get authentication state as observable
+   */
   getAuthState(): Observable<AuthState> {
     return this.authState$.asObservable();
   }
 
+  /**
+   * Get current authentication state
+   */
   getCurrentAuthState(): AuthState {
     return this.authState$.value;
   }
 
+  /**
+   * Check if user is authenticated
+   */
   isAuthenticated(): boolean {
     return this.authState$.value.isAuthenticated;
   }
 
+  /**
+   * Get current user
+   */
   getCurrentUser(): User | null {
     return this.authState$.value.user;
   }
 
+  /**
+   * Get auth token
+   */
   getToken(): string | null {
     return this.authState$.value.token;
   }
 
+  /**
+   * Login user
+   */
   login(credentials: LoginRequest): Observable<AuthResponse> {
     const url = getApiUrl('/auth/login');
     return this.http.post<AuthResponse>(url, credentials).pipe(
       tap((response) => {
+        // tap() only runs on 2xx — a successful HTTP response IS a successful login.
+        // Extract user/token from top-level fields OR a nested `data` wrapper
+        // (ApiResponse<T> shape: { data: { token, user }, message }).
         const payload = (response as any).data ?? response;
         const token: string | null =
           payload.accessToken ?? payload.token ?? payload.access_token ?? null;
@@ -60,8 +83,6 @@ export class AuthService {
             lastName: '',
             username: credentials.email.split('@')[0],
           };
-        console.log('[AuthService] login payload:', payload);
-        console.log('[AuthService] resolved user:', user);
         if (!token) {
           this.updateAuthState({
             ...this.authState$.value,
@@ -71,7 +92,6 @@ export class AuthService {
           });
           return;
         }
-        console.log('[AuthService] login success | roles:', user.roles);
         this.updateAuthState({
           isAuthenticated: true,
           user,
@@ -88,14 +108,18 @@ export class AuthService {
           loading: false,
         });
         return throwError(() => error);
-      }),
+      })
     );
   }
 
+  /**
+   * Register user
+   */
   register(data: RegisterRequest): Observable<AuthResponse> {
     const url = getApiUrl('/auth/register');
     return this.http.post<AuthResponse>(url, data).pipe(
       tap((response) => {
+        // tap() only runs on 2xx — same rationale as login().
         const payload = (response as any).data ?? response;
         const token: string | null =
           payload.accessToken ?? payload.token ?? payload.access_token ?? null;
@@ -132,82 +156,46 @@ export class AuthService {
           loading: false,
         });
         return throwError(() => error);
-      }),
+      })
     );
   }
 
+  /**
+   * Logout user
+   */
   logout(): Observable<AuthResponse> {
     const url = getApiUrl('/auth/logout');
     return this.http.post<AuthResponse>(url, {}).pipe(
-      tap(() => this.clearAuthState()),
+      tap(() => {
+        this.clearAuthState();
+      }),
       catchError((error) => {
+        // Clear state even if logout API fails
         this.clearAuthState();
         return throwError(() => error);
-      }),
+      })
     );
   }
 
-  /** Refresh the access token using the stored refresh token.
-   *  Concurrent callers queue behind the first in-flight refresh. */
-  refreshAccessToken(): Observable<string> {
-    const { refreshToken } = this.authState$.value;
-    if (!refreshToken) {
-      return throwError(() => new Error('No refresh token available'));
-    }
-
-    if (this.isRefreshing) {
-      return this.tokenSubject$.pipe(
-        filter((t): t is string => t !== null),
-        take(1),
-      );
-    }
-
-    this.isRefreshing = true;
-    this.tokenSubject$.next(null);
-
-    return this.http
-      .post<TokenRefreshResponse>(getApiUrl('/auth/refresh'), { refreshToken })
-      .pipe(
-        map(response => {
-          const newToken = response.accessToken ?? response.token;
-          if (!newToken) throw new Error('No token in refresh response');
-          return newToken;
-        }),
-        tap(newToken => {
-          this.updateAuthState({ ...this.authState$.value, token: newToken });
-          this.isRefreshing = false;
-          this.tokenSubject$.next(newToken);
-        }),
-        catchError(error => {
-          this.isRefreshing = false;
-          this.tokenSubject$.next(null);
-          this.forceLogout();
-          return throwError(() => error);
-        }),
-      );
-  }
-
-  /** Clear auth state locally without hitting the logout endpoint. */
-  forceLogout(): void {
-    localStorage.removeItem(this.STORAGE_KEY);
-    this.authState$.next(this.getInitialState());
-  }
-
-  /** Update the stored user object (e.g. after a profile save). */
-  updateUser(user: User): void {
-    this.updateAuthState({ ...this.authState$.value, user });
-  }
-
+  /**
+   * Update authentication state
+   */
   private updateAuthState(state: AuthState): void {
     this.authState$.next(state);
     this.saveAuthState(state);
   }
 
+  /**
+   * Clear authentication state
+   */
   private clearAuthState(): void {
     localStorage.removeItem(this.STORAGE_KEY);
     this.authState$.next(this.getInitialState());
   }
 
+  /**
+   * Get initial authentication state
+   */
   private getInitialState(): AuthState {
     return {
       isAuthenticated: false,
@@ -215,25 +203,32 @@ export class AuthService {
       token: null,
       refreshToken: null,
       loading: false,
-      error: null,
+      error: null
     };
   }
 
+  /**
+   * Save authentication state to local storage
+   */
   private saveAuthState(state: AuthState): void {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
   }
 
+  /**
+   * Load authentication state from local storage
+   */
   private loadAuthState(): void {
-    const saved = localStorage.getItem(this.STORAGE_KEY);
-    if (saved) {
+    const savedState = localStorage.getItem(this.STORAGE_KEY);
+    if (savedState) {
       try {
-        const state = JSON.parse(saved) as AuthState;
+        const state = JSON.parse(savedState) as AuthState;
         if (state.isAuthenticated && state.token) {
           this.authState$.next(state);
         } else {
           localStorage.removeItem(this.STORAGE_KEY);
         }
-      } catch {
+      } catch (error) {
+        console.error('Failed to load auth state from storage', error);
         localStorage.removeItem(this.STORAGE_KEY);
       }
     }

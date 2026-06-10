@@ -9,28 +9,8 @@ export const API_CONFIG = {
     AUTH: {
       LOGIN: '/auth/login',
       REGISTER: '/auth/register',
-      LOGOUT: '/auth/logout',
-      REFRESH: '/auth/refresh',
-    },
-    USERS: {
-      ME: '/users/me',
-      PASSWORD: '/users/me/password',
-    },
-    ORGANIZATIONS: {
-      BASE: '/organizations',
-      SEARCH: '/organizations/search',
-      MY: '/organizations/my',
-    },
-    TEAMS: {
-      BASE: '/teams',
-      MY_TEAMS: '/teams/my-teams',
-      SEARCH: '/teams/search',
-    },
-    CHANNELS: '/channels',
-    ANALYTICS: {
-      OVERVIEW: '/analytics/overview',
-      ACTIVITY: '/analytics/activity',
-    },
+      LOGOUT: '/auth/logout'
+    }
   }
 };
 

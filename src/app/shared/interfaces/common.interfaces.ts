@@ -19,16 +19,6 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-export interface PagedResponse<T> {
-  content: T[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-  last: boolean;
-  first: boolean;
-}
-
 export interface ErrorResponse {
   message: string;
   code?: string;

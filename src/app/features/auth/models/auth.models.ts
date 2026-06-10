@@ -1,5 +1,6 @@
-export { SystemRole } from '@core/auth/roles';
-export type UserRole = import('@core/auth/roles').SystemRole;
+/**
+ * Authentication Models
+ */
 
 export interface LoginRequest {
   email: string;
@@ -27,8 +28,6 @@ export interface User {
   firstName: string;
   lastName: string;
   username: string;
-  roles?: import('@core/auth/roles').SystemRole[];
-  avatar?: string;
 }
 
 export interface AuthState {
@@ -38,10 +37,4 @@ export interface AuthState {
   refreshToken: string | null;
   loading: boolean;
   error: string | null;
-}
-
-export interface TokenRefreshResponse {
-  accessToken?: string;
-  token?: string;
-  refreshToken?: string;
 }
