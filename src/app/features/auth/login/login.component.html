@@ -1,5 +1,5 @@
 <div class="auth-page">
-  <div class="auth-panel">
+  <div class="auth-panel slide-in-up">
 
     <!-- ── Left: brand panel ── -->
     <aside class="brand-side">
@@ -43,11 +43,7 @@
           <p>Sign in to your account to continue</p>
         </div>
 
-        <!-- Error message (replaces p-messages) -->
-        <div *ngIf="errorMessage" class="auth-messages" role="alert">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-          <span>{{ errorMessage }}</span>
-        </div>
+        <p-messages *ngIf="messages.length" [(value)]="messages" [enableService]="false" [closable]="false" class="auth-messages"></p-messages>
 
         <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="auth-form">
 
@@ -59,6 +55,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
               </span>
               <input
+                pInputText
                 id="email"
                 type="email"
                 formControlName="email"
@@ -81,6 +78,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               </span>
               <input
+                pInputText
                 id="password"
                 [type]="showPassword ? 'text' : 'password'"
                 formControlName="password"
@@ -104,18 +102,14 @@
             </span>
           </div>
 
-          <!-- Submit (replaces pButton with loading) -->
           <button
-            mat-flat-button
+            pButton
             type="submit"
-            [disabled]="isLoading"
+            label="Sign in"
+            [loading]="isLoading"
+            [disabled]="loginForm.invalid || isLoading"
             class="submit-btn"
-            aria-label="Sign in"
-            title="Sign in"
-          >
-            <mat-spinner *ngIf="isLoading" diameter="18" class="btn-spinner"></mat-spinner>
-            <span *ngIf="!isLoading">Sign in</span>
-          </button>
+          ></button>
 
         </form>
 
