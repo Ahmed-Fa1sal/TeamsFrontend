@@ -105,6 +105,17 @@
             <span class="member-name">{{ memberDisplayName(m) }}</span>
             <span class="member-username">&#64;{{ m.user.username }}</span>
           </div>
+          <button
+            type="button"
+            mat-stroked-button
+            color="primary"
+            class="btn-call-member"
+            (click)="onCallMember(m)"
+            matTooltip="Call {{ memberDisplayName(m) }}"
+          >
+            <i class="pi pi-phone" aria-hidden="true"></i>
+            Call
+          </button>
           <span class="role-badge" [class]="'role-badge--' + m.role.toLowerCase()">
             {{ m.role | titlecase }}
           </span>

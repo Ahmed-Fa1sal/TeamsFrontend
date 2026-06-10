@@ -149,6 +149,20 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  onCallMember(member: TeamMember): void {
+    const currentUserId = Number(this.authService.getCurrentUser()?.id);
+    if (member.user.id === currentUserId) {
+      return;
+    }
+
+    this.router.navigate(['/videocall'], {
+      queryParams: {
+        targetUserId: member.user.id,
+        targetUserName: this.memberDisplayName(member),
+      },
+    });
+  }
+
   onArchive(): void {
     if (!this.team) return;
     const data: ConfirmDialogData = {

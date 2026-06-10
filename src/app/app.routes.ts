@@ -56,6 +56,12 @@ export const APP_ROUTES: Routes = [
     canActivate: [authGuardFn],
   },
   {
+    path: 'videocall',
+    loadComponent: () =>
+      import('@app/videocall/videocall.component').then(m => m.VideocallComponent),
+    canActivate: [authGuardFn],
+  },
+  {
     // Only SYSTEM_ADMIN may see the full list of all organizations
     path: 'organizations',
     loadComponent: () =>
