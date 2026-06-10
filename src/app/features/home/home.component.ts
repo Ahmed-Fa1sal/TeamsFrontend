@@ -1,35 +1,33 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, forkJoin, of } from 'rxjs';
+import { takeUntil, catchError } from 'rxjs/operators';
 
-import { ButtonModule } from 'primeng/button';
-import { AvatarModule } from 'primeng/avatar';
-import { BadgeModule } from 'primeng/badge';
-import { TagModule } from 'primeng/tag';
-import { DividerModule } from 'primeng/divider';
-import { ToastModule } from 'primeng/toast';
-import { SkeletonModule } from 'primeng/skeleton';
-import { TooltipModule } from 'primeng/tooltip';
-import { RippleModule } from 'primeng/ripple';
-import { PopoverModule } from 'primeng/popover';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { MessageService, ConfirmationService } from 'primeng/api';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatRippleModule } from '@angular/material/core';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
+import gsap from 'gsap';
 
 import { AuthService } from '../auth/services/auth.service';
 import { User } from '../auth/models/auth.models';
-
-// ── Domain interfaces (wired to real APIs when backend endpoints are ready) ──
-
-interface Organization {
-  id: string;
-  name: string;
-  domain: string;
-  memberCount: number;
-  teamCount: number;
-  plan: string;
-}
+import { PermissionService } from '@core/services/permission.service';
+import { HasSystemRoleDirective } from '@shared/directives/has-system-role.directive';
+import { SystemRole, OrganizationRole } from '@core/auth/roles';
+import { TeamManagementFetcherService } from '../teams/services/team-management-fetcher.service';
+import { OrganizationService } from '../organizations/services/organization.service';
+import { Team as ApiTeam, Channel as ApiChannel } from '../teams/models/team.models';
+import { OrganizationResponse } from '../organizations/models/organization.model';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+} from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 interface Team {
   id: string;
@@ -40,17 +38,6 @@ interface Team {
   avatarLabel: string;
   avatarColor: string;
   isOwner: boolean;
-}
-
-interface Channel {
-  id: string;
-  name: string;
-  teamId: string;
-  teamName: string;
-  teamColor: string;
-  isPrivate: boolean;
-  memberCount: number;
-  unreadCount: number;
 }
 
 interface QuickAction {
@@ -67,19 +54,16 @@ interface QuickAction {
   standalone: true,
   imports: [
     CommonModule,
-    ButtonModule,
-    AvatarModule,
-    BadgeModule,
-    TagModule,
-    DividerModule,
-    ToastModule,
-    SkeletonModule,
-    TooltipModule,
-    RippleModule,
-    PopoverModule,
-    ConfirmDialogModule,
+    MatButtonModule,
+    MatDividerModule,
+    MatTooltipModule,
+    MatRippleModule,
+    MatMenuModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatProgressSpinnerModule,
+    HasSystemRoleDirective,
   ],
-  providers: [MessageService, ConfirmationService],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
 })
@@ -87,117 +71,67 @@ export class HomeComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   isLoading = true;
   isLoggingOut = false;
+  loadError = false;
 
+  // Resolved after async org context for non-system-admin users
+  isOrgAdmin = false;
+
+  // Dashboard counts
+  orgsCount = 0;
+  teamsCount = 0;
+  channelsCount = 0;
+
+  // Dashboard lists
+  orgsList: OrganizationResponse[] = [];
+  orgAdminOrg: OrganizationResponse | null = null;
+  teams: Team[] = [];
+  channelsList: ApiChannel[] = [];
+
+  private managedOrgId: number | null = null;
   private readonly destroy$ = new Subject<void>();
+  readonly SystemRole = SystemRole;
 
-  // ── Mock data (replace with real service calls once APIs are ready) ──
-
-  readonly organization: Organization = {
-    id: 'org-1',
-    name: 'Acme Corporation',
-    domain: 'acme.com',
-    memberCount: 24,
-    teamCount: 6,
-    plan: 'Enterprise',
-  };
-
-  readonly teams: Team[] = [
-    {
-      id: 't1', name: 'Engineering', description: 'Core product development',
-      memberCount: 8, channelCount: 5, avatarLabel: 'EN',
-      avatarColor: '#5b5fc7', isOwner: true,
-    },
-    {
-      id: 't2', name: 'Design', description: 'UI/UX & brand',
-      memberCount: 4, channelCount: 3, avatarLabel: 'DS',
-      avatarColor: '#237b4b', isOwner: false,
-    },
-    {
-      id: 't3', name: 'Product', description: 'Roadmap & strategy',
-      memberCount: 6, channelCount: 4, avatarLabel: 'PR',
-      avatarColor: '#d83b01', isOwner: false,
-    },
-    {
-      id: 't4', name: 'Marketing', description: 'Growth & campaigns',
-      memberCount: 6, channelCount: 4, avatarLabel: 'MK',
-      avatarColor: '#008299', isOwner: false,
-    },
+  readonly comingSoon = [
+    { id: 'chat', label: 'Chat', icon: 'pi pi-comments', description: 'Direct and group messaging' },
+    { id: 'meetings', label: 'Meetings', icon: 'pi pi-video', description: 'Schedule and join video calls' },
+    { id: 'notifications', label: 'Notifications', icon: 'pi pi-bell', description: 'Smart alerts and reminders' },
   ];
 
-  readonly channels: Channel[] = [
-    {
-      id: 'c1', name: 'general', teamId: 't1', teamName: 'Engineering',
-      teamColor: '#5b5fc7', isPrivate: false, memberCount: 8, unreadCount: 3,
-    },
-    {
-      id: 'c2', name: 'announcements', teamId: 't1', teamName: 'Engineering',
-      teamColor: '#5b5fc7', isPrivate: false, memberCount: 8, unreadCount: 0,
-    },
-    {
-      id: 'c3', name: 'design-system', teamId: 't2', teamName: 'Design',
-      teamColor: '#237b4b', isPrivate: false, memberCount: 4, unreadCount: 12,
-    },
-    {
-      id: 'c4', name: 'sprint-planning', teamId: 't3', teamName: 'Product',
-      teamColor: '#d83b01', isPrivate: true, memberCount: 6, unreadCount: 1,
-    },
-    {
-      id: 'c5', name: 'campaigns', teamId: 't4', teamName: 'Marketing',
-      teamColor: '#008299', isPrivate: false, memberCount: 6, unreadCount: 0,
-    },
+  private readonly AVATAR_COLORS = [
+    '#5b5fc7', '#237b4b', '#d83b01', '#008299', '#b86800', '#744da9',
   ];
 
-  readonly quickActions: QuickAction[] = [
+  private readonly ALL_ACTIONS: QuickAction[] = [
+    {
+      id: 'add-user', label: 'Add User',
+      icon: 'pi pi-user-plus', description: 'Add a new system user',
+      color: '#b86800', bgColor: '#fdf5e4',
+    },
+    {
+      id: 'create-org', label: 'Create Organization',
+      icon: 'pi pi-building', description: 'Set up a new organization',
+      color: '#d83b01', bgColor: '#fdeee8',
+    },
+    {
+      id: 'add-member', label: 'Add Member',
+      icon: 'pi pi-user-plus', description: 'Add member to your organization',
+      color: '#b86800', bgColor: '#fdf5e4',
+    },
     {
       id: 'create-team', label: 'Create Team',
       icon: 'pi pi-users', description: 'Start a new team workspace',
       color: '#5b5fc7', bgColor: '#ededfb',
     },
-    {
-      id: 'create-channel', label: 'Create Channel',
-      icon: 'pi pi-hashtag', description: 'Add a channel to a team',
-      color: '#237b4b', bgColor: '#e4f2ea',
-    },
-    {
-      id: 'invite-user', label: 'Invite User',
-      icon: 'pi pi-user-plus', description: 'Bring in a team member',
-      color: '#b86800', bgColor: '#fdf5e4',
-    },
-    {
-      id: 'manage-org', label: 'Manage Organization',
-      icon: 'pi pi-building', description: 'Settings & permissions',
-      color: '#d83b01', bgColor: '#fdeee8',
-    },
   ];
-
-  readonly comingSoon = [
-    {
-      id: 'chat', label: 'Chat',
-      icon: 'pi pi-comments', description: 'Direct and group messaging',
-    },
-    {
-      id: 'meetings', label: 'Meetings',
-      icon: 'pi pi-video', description: 'Schedule and join video calls',
-    },
-    {
-      id: 'notifications', label: 'Notifications',
-      icon: 'pi pi-bell', description: 'Smart alerts and reminders',
-    },
-  ];
-
-  // ── Action label map ───────────────────────────────────────────────────────
-  private readonly actionLabels: Record<string, string> = {
-    'create-team': 'Create Team',
-    'create-channel': 'Create Channel',
-    'invite-user': 'Invite User',
-    'manage-org': 'Manage Organization',
-  };
 
   constructor(
     private readonly authService: AuthService,
     private readonly router: Router,
-    private readonly messageService: MessageService,
-    private readonly confirmationService: ConfirmationService,
+    private readonly snackBar: MatSnackBar,
+    private readonly dialog: MatDialog,
+    private readonly teamService: TeamManagementFetcherService,
+    private readonly orgService: OrganizationService,
+    readonly permissions: PermissionService,
   ) {}
 
   ngOnInit(): void {
@@ -206,12 +140,137 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     this.currentUser = this.authService.getCurrentUser();
-    this.isLoading = false;
+
+    if (this.isSystemAdmin) {
+      this.loadAdminData();
+    } else {
+      this.resolveOrgRole();
+    }
   }
 
   ngOnDestroy(): void {
+    this.permissions.clearOrgContext();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // ── Role getters ───────────────────────────────────────────────────────────
+
+  get isSystemAdmin(): boolean { return this.permissions.isSystemAdmin(); }
+  get isRegularUser(): boolean { return !this.isSystemAdmin && !this.isOrgAdmin; }
+
+  // ── Data loading ───────────────────────────────────────────────────────────
+
+  private loadAdminData(): void {
+    this.orgService.getAllOrganizations({ page: 0, size: 5 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: page => {
+          this.orgsCount = page.totalElements;
+          this.orgsList = page.content;
+          this.finishLoading();
+        },
+        error: () => { this.loadError = true; this.finishLoading(); },
+      });
+  }
+
+  private resolveOrgRole(): void {
+    this.orgService.getMyOrganizations({ page: 0, size: 1 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: page => {
+          const firstOrg = page.content[0];
+          if (!firstOrg || !this.currentUser?.id) {
+            this.loadUserData();
+            return;
+          }
+          const userId = Number(this.currentUser.id);
+          this.orgService.getMember(firstOrg.id, userId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: membership => {
+                const orgRole = membership.role as unknown as OrganizationRole;
+                this.permissions.setOrgContext(orgRole, firstOrg.id);
+                this.managedOrgId = firstOrg.id;
+                if (orgRole === OrganizationRole.ORG_ADMIN) {
+                  this.isOrgAdmin = true;
+                  this.loadOrgAdminData(firstOrg.id);
+                } else {
+                  this.loadUserData();
+                }
+              },
+              error: () => { this.loadUserData(); },
+            });
+        },
+        error: () => { this.loadUserData(); },
+      });
+  }
+
+  private loadOrgAdminData(orgId: number): void {
+    this.orgService.getOrganizationById(orgId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: org => {
+          this.orgAdminOrg = org;
+          this.orgsList = [org];
+          this.finishLoading();
+        },
+        error: () => { this.loadError = true; this.finishLoading(); },
+      });
+  }
+
+  private loadUserData(): void {
+    const orgs$ = this.orgService.getMyOrganizations({ page: 0, size: 10 })
+      .pipe(catchError(() => of(null)));
+    const teams$ = this.teamService.getMyTeams({ page: 0, size: 20 })
+      .pipe(catchError(() => of(null)));
+    const channels$ = this.teamService.getMyChannels({ page: 0, size: 20 })
+      .pipe(catchError(() => of(null)));
+
+    forkJoin([orgs$, teams$, channels$])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ([orgsPage, teamsPage, channelsPage]) => {
+          if (orgsPage) {
+            this.orgsCount = orgsPage.totalElements;
+            this.orgsList = orgsPage.content;
+          }
+          if (teamsPage) {
+            this.teamsCount = teamsPage.totalElements;
+            this.teams = teamsPage.content.map(t => this.mapApiTeam(t));
+          }
+          if (channelsPage) {
+            this.channelsCount = channelsPage.totalElements;
+            this.channelsList = channelsPage.content;
+          }
+          this.finishLoading();
+        },
+        error: () => { this.finishLoading(); },
+      });
+  }
+
+  private finishLoading(): void {
+    this.isLoading = false;
+    setTimeout(() => {
+      gsap.from('.welcome', { y: 16, opacity: 0, duration: 0.35, ease: 'power2.out' });
+      gsap.from('.card', { y: 24, opacity: 0, duration: 0.4, stagger: 0.08, ease: 'power2.out' });
+    }, 0);
+  }
+
+  private mapApiTeam(apiTeam: ApiTeam): Team {
+    return {
+      id: String(apiTeam.id),
+      name: apiTeam.name,
+      description: apiTeam.description ?? '',
+      memberCount: apiTeam.memberCount ?? 0,
+      channelCount: apiTeam.channelCount ?? 0,
+      avatarLabel: apiTeam.name.slice(0, 2).toUpperCase(),
+      avatarColor: this.AVATAR_COLORS[apiTeam.id % this.AVATAR_COLORS.length],
+      isOwner:
+        apiTeam.owner?.id != null &&
+        this.currentUser?.id != null &&
+        String(apiTeam.owner.id) === String(this.currentUser.id),
+    };
   }
 
   // ── Computed getters ───────────────────────────────────────────────────────
@@ -230,9 +289,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   get firstName(): string {
-    return this.currentUser?.firstName
-      ?? this.currentUser?.username
-      ?? 'there';
+    return this.currentUser?.firstName ?? this.currentUser?.username ?? 'there';
   }
 
   get timeGreeting(): string {
@@ -242,58 +299,102 @@ export class HomeComponent implements OnInit, OnDestroy {
     return 'Good evening';
   }
 
-  get totalUnread(): number {
-    return this.channels.reduce((sum, c) => sum + c.unreadCount, 0);
+  get isTeamOwner(): boolean { return this.teams.some(t => t.isOwner); }
+
+  get visibleQuickActions(): QuickAction[] {
+    if (this.isSystemAdmin) {
+      return this.ALL_ACTIONS.filter(a => a.id === 'add-user' || a.id === 'create-org');
+    }
+    if (this.isOrgAdmin) {
+      return this.ALL_ACTIONS.filter(a => a.id === 'add-member');
+    }
+    return this.ALL_ACTIONS.filter(a => a.id === 'create-team');
+  }
+
+  channelColor(channel: ApiChannel): string {
+    return this.AVATAR_COLORS[channel.teamId % this.AVATAR_COLORS.length];
   }
 
   // ── Event handlers ─────────────────────────────────────────────────────────
 
   onQuickAction(id: string): void {
-    this.messageService.add({
-      severity: 'info',
-      summary: this.actionLabels[id] ?? id,
-      detail: 'This feature is coming soon.',
-      life: 3000,
-    });
+    switch (id) {
+      case 'create-team':
+        this.router.navigate(['/teams/new']);
+        break;
+      case 'create-org':
+        this.router.navigate(['/organizations']);
+        break;
+      case 'add-user':
+        this.snackBar.open('Add User — This feature is coming soon.', 'Dismiss', { duration: 3000 });
+        break;
+      case 'add-member': {
+        const orgId = this.managedOrgId ?? this.permissions.managedOrgId;
+        if (orgId) {
+          this.router.navigate(['/organizations', orgId]);
+        } else {
+          this.snackBar.open('Organization not found. Please try again.', 'Dismiss', { duration: 3000 });
+        }
+        break;
+      }
+      default:
+        this.snackBar.open('This feature is coming soon.', 'Dismiss', { duration: 3000 });
+    }
   }
 
   onTeamOpen(team: Team): void {
-    this.messageService.add({
-      severity: 'info',
-      summary: team.name,
-      detail: 'Team page is coming soon.',
-      life: 3000,
-    });
+    this.router.navigate(['/teams', team.id]);
   }
 
-  onChannelOpen(channel: Channel): void {
-    this.messageService.add({
-      severity: 'info',
-      summary: `#${channel.name}`,
-      detail: 'Channel page is coming soon.',
-      life: 3000,
-    });
+  onChannelOpen(channel: ApiChannel): void {
+    this.router.navigate(['/channels', channel.id]);
+  }
+
+  onNavigate(path: string): void {
+    this.router.navigate([path]);
+  }
+
+  onManageOrg(): void {
+    if (this.isSystemAdmin) {
+      this.router.navigate(['/organizations']);
+    } else {
+      const orgId = this.managedOrgId ?? this.permissions.managedOrgId;
+      if (orgId) {
+        this.router.navigate(['/organizations', orgId]);
+      } else {
+        this.snackBar.open('Organization not found.', 'Dismiss', { duration: 3000 });
+      }
+    }
+  }
+
+  onManageSpecificOrg(orgId: number): void {
+    this.router.navigate(['/organizations', orgId]);
   }
 
   onLogout(): void {
-    this.confirmationService.confirm({
+    const data: ConfirmDialogData = {
       header: 'Sign out?',
       message: 'You will be signed out of Teams.',
-      icon: 'pi pi-sign-out',
       acceptLabel: 'Sign out',
       rejectLabel: 'Cancel',
-      acceptButtonStyleClass: 'confirm-accept-btn',
-      rejectButtonStyleClass: 'confirm-reject-btn',
-      accept: () => {
-        this.isLoggingOut = true;
-        this.authService
-          .logout()
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: () => this.router.navigate(['/login']),
-            error: () => this.router.navigate(['/login']),
-          });
-      },
+    };
+
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      data,
+      panelClass: 'signout-dialog',
+      width: '360px',
+    });
+
+    ref.afterClosed().pipe(takeUntil(this.destroy$)).subscribe((confirmed: boolean) => {
+      if (!confirmed) return;
+      this.isLoggingOut = true;
+      this.authService
+        .logout()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => this.router.navigate(['/login']),
+          error: () => this.router.navigate(['/login']),
+        });
     });
   }
 }

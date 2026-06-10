@@ -1,0 +1,271 @@
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar__brand">
+    <div class="topbar__logo" aria-hidden="true">T</div>
+    <span class="topbar__product">Teams</span>
+  </div>
+
+  <nav class="topbar__nav" aria-label="Primary navigation">
+    <button type="button" class="topbar__nav-item topbar__nav-btn" (click)="onBack()">
+      <i class="pi pi-th-large" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Home</span>
+    </button>
+  </nav>
+</header>
+
+<!-- LOADING STATE -->
+<main class="page-main" *ngIf="isLoading">
+  <div class="skeleton-card">
+    <div class="skeleton-header">
+      <div class="skeleton-avatar pulse"></div>
+      <div class="skeleton-lines">
+        <div class="skeleton-line skeleton-line--lg pulse"></div>
+        <div class="skeleton-line skeleton-line--sm pulse"></div>
+      </div>
+    </div>
+    <div class="skeleton-body">
+      <div class="skeleton-line pulse" style="width: 100%; height: 14px;"></div>
+      <div class="skeleton-line pulse" style="width: 80%; height: 14px;"></div>
+      <div class="skeleton-line pulse" style="width: 60%; height: 14px;"></div>
+    </div>
+  </div>
+</main>
+
+<!-- DETAIL CONTENT -->
+<main class="page-main" *ngIf="!isLoading && team">
+  <div class="detail-card">
+
+    <!-- Team hero -->
+    <div class="team-hero">
+      <div class="team-avatar" [style.background]="'#5b5fc7'">{{ avatarLabel }}</div>
+      <div class="team-identity">
+        <div class="team-name-row">
+          <h1 class="team-name">{{ team!.name }}</h1>
+          <span class="badge badge--archived" *ngIf="team!.archived">Archived</span>
+          <span class="badge badge--private" *ngIf="!team!.isPublic">Private</span>
+          <span class="badge badge--public" *ngIf="team!.isPublic">Public</span>
+        </div>
+        <p class="team-desc" *ngIf="team!.description">{{ team!.description }}</p>
+        <p class="team-desc team-desc--empty" *ngIf="!team!.description">No description</p>
+      </div>
+    </div>
+
+    <!-- Stats strip -->
+    <div class="stats-strip">
+      <div class="stat-item">
+        <span class="stat-value">{{ team!.memberCount ?? 0 }}</span>
+        <span class="stat-label">Members</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-value">{{ team!.channelCount ?? 0 }}</span>
+        <span class="stat-label">Channels</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-value">{{ team!.isPublic ? 'Public' : 'Private' }}</span>
+        <span class="stat-label">Visibility</span>
+      </div>
+    </div>
+
+    <!-- Metadata grid -->
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">Owner</span>
+        <span class="meta-value">{{ displayOwner }}</span>
+      </div>
+      <div class="meta-item" *ngIf="team!.createdAt">
+        <span class="meta-label">Created</span>
+        <span class="meta-value">{{ team!.createdAt | date:'mediumDate' }}</span>
+      </div>
+      <div class="meta-item" *ngIf="team!.updatedAt">
+        <span class="meta-label">Last updated</span>
+        <span class="meta-value">{{ team!.updatedAt | date:'mediumDate' }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Status</span>
+        <span class="meta-value" [class.meta-value--warning]="team!.archived">
+          {{ team!.archived ? 'Archived' : 'Active' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Members list -->
+    <ng-container *ngIf="members.length > 0">
+      <div class="section-divider"></div>
+      <div class="section-header">
+        <i class="pi pi-users" aria-hidden="true"></i>
+        <span>Members</span>
+        <span class="member-count">{{ members.length }}</span>
+      </div>
+      <ul class="member-list" role="list">
+        <li class="member-item" *ngFor="let m of members" role="listitem">
+          <div class="member-avatar">{{ memberInitials(m) }}</div>
+          <div class="member-info">
+            <span class="member-name">{{ memberDisplayName(m) }}</span>
+            <span class="member-username">&#64;{{ m.user.username }}</span>
+          </div>
+          <button
+            type="button"
+            mat-stroked-button
+            color="primary"
+            class="btn-call-member"
+            (click)="onCallMember(m)"
+            matTooltip="Call {{ memberDisplayName(m) }}"
+          >
+            <i class="pi pi-phone" aria-hidden="true"></i>
+            Call
+          </button>
+          <span class="role-badge" [class]="'role-badge--' + m.role.toLowerCase()">
+            {{ m.role | titlecase }}
+          </span>
+        </li>
+      </ul>
+    </ng-container>
+
+    <div class="section-divider"></div>
+    <div class="section-header">
+      <i class="pi pi-hashtag" aria-hidden="true"></i>
+      <span>Channels</span>
+      <span class="member-count">{{ channels.length }}</span>
+    </div>
+
+    <ng-container *ngIf="isChannelsLoading">
+      <p class="loading-copy">Loading channels…</p>
+    </ng-container>
+
+    <ng-container *ngIf="!isChannelsLoading && channels.length > 0">
+      <ul class="channel-list" role="list">
+        <li
+          class="channel-item"
+          *ngFor="let channel of channels"
+          role="listitem"
+          tabindex="0"
+          (click)="onChannelOpen(channel)"
+          (keydown.enter)="onChannelOpen(channel)"
+        >
+          <div class="channel-item__main">
+            <span class="channel-item__name">#{{ channel.name }}</span>
+            <span class="channel-item__visibility">{{ channel.isPublic ? 'Public' : 'Private' }}</span>
+          </div>
+          <div class="channel-item__meta">
+            <span>{{ channel.description || 'No description' }}</span>
+            <span>{{ channel.memberCount ?? 0 }} members</span>
+          </div>
+        </li>
+      </ul>
+    </ng-container>
+
+    <ng-container *ngIf="!isChannelsLoading && channels.length === 0">
+      <p class="empty-copy">No channels found for this team yet.</p>
+    </ng-container>
+
+    <!-- Actions -->
+    <div class="section-divider"></div>
+    <div class="action-bar">
+      <button type="button" mat-button class="btn-back" (click)="onBack()">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Back to Home
+      </button>
+
+      <div class="action-bar__right">
+        <!-- Unarchive: Team OWNER/ADMIN, ORG_ADMIN, SYSTEM_ADMIN -->
+        <button
+          type="button"
+          mat-stroked-button
+          class="btn-unarchive"
+          *ngIf="team!.archived && canManageThisTeam"
+          [disabled]="isActing"
+          (click)="onUnarchive()"
+          matTooltip="Restore this team to active"
+        >
+          <i class="pi pi-undo" aria-hidden="true"></i>
+          Unarchive
+        </button>
+
+        <!-- Create Channel: Team OWNER/ADMIN, ORG_ADMIN, SYSTEM_ADMIN -->
+        <button
+          type="button"
+          mat-flat-button
+          class="btn-create-channel"
+          *ngIf="canManageThisTeam"
+          [disabled]="isActing || team!.archived"
+          (click)="openCreateChannel()"
+          matTooltip="Create a new channel in this team"
+        >
+          <i class="pi pi-plus" aria-hidden="true"></i>
+          Create channel
+        </button>
+
+        <!-- Archive: Team OWNER/ADMIN, ORG_ADMIN, SYSTEM_ADMIN -->
+        <button
+          type="button"
+          mat-stroked-button
+          class="btn-archive"
+          *ngIf="!team!.archived && canManageThisTeam"
+          [disabled]="isActing"
+          (click)="onArchive()"
+          matTooltip="Archive this team"
+        >
+          <i class="pi pi-box" aria-hidden="true"></i>
+          Archive
+        </button>
+
+        <!-- Delete: Team OWNER, ORG_ADMIN, SYSTEM_ADMIN only (not ADMIN) -->
+        <button
+          type="button"
+          mat-flat-button
+          class="btn-delete"
+          *ngIf="canDeleteThisTeam"
+          [disabled]="isActing"
+          (click)="onDelete()"
+          matTooltip="Permanently delete this team"
+        >
+          <mat-spinner *ngIf="isActing" diameter="16" class="btn-spinner"></mat-spinner>
+          <i class="pi pi-trash" aria-hidden="true" *ngIf="!isActing"></i>
+          {{ isActing ? 'Working…' : 'Delete team' }}
+        </button>
+      </div>
+    </div>
+
+    <ng-template #createChannelDialog let-dialogRef="dialogRef">
+      <h2 mat-dialog-title>Create a new channel</h2>
+      <mat-dialog-content>
+        <p class="dialog-copy">Add a channel to <strong>{{ team.name }}</strong> and choose its visibility.</p>
+        <mat-form-field appearance="fill" class="dialog-field">
+          <mat-label>Channel name</mat-label>
+          <input matInput [(ngModel)]="channelName" placeholder="e.g. general" />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="dialog-field">
+          <mat-label>Description</mat-label>
+          <textarea matInput rows="3" [(ngModel)]="channelDescription" placeholder="General discussion channel"></textarea>
+        </mat-form-field>
+
+        <mat-checkbox [(ngModel)]="channelIsPublic">Public channel</mat-checkbox>
+      </mat-dialog-content>
+      <mat-dialog-actions align="end">
+        <button mat-button (click)="cancelCreateChannel(dialogRef)">Cancel</button>
+        <button
+          mat-flat-button
+          color="primary"
+          [disabled]="!channelName.trim() || isActing"
+          (click)="createChannel(dialogRef)"
+        >
+          <mat-spinner *ngIf="isActing" diameter="16" class="btn-spinner"></mat-spinner>
+          {{ isActing ? 'Creating…' : 'Create channel' }}
+        </button>
+      </mat-dialog-actions>
+    </ng-template>
+
+  </div>
+</main>
+
+<!-- ERROR / NOT FOUND STATE -->
+<main class="page-main" *ngIf="!isLoading && !team">
+  <div class="detail-card empty-state">
+    <i class="pi pi-exclamation-triangle empty-icon" aria-hidden="true"></i>
+    <p class="empty-msg">Team not found or could not be loaded.</p>
+    <button type="button" mat-flat-button color="primary" (click)="onBack()">Back to Home</button>
+  </div>
+</main>

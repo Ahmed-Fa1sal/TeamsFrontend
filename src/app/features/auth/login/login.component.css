@@ -85,7 +85,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.18);
+  background: #3e3ba8;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 10px;
   color: #fff;
@@ -143,7 +143,7 @@
   height: 22px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
+  background: #3e3ba8;
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
 }
@@ -298,7 +298,7 @@
 
 .pw-toggle:hover {
   color: #4f46e5;
-  background: rgba(79, 70, 229, 0.07);
+  background: #ebe9fd;
 }
 
 /* ── Field hints ─────────────────────────────── */
@@ -314,41 +314,45 @@
   color: #ef4444;
 }
 
-/* ── Submit button ───────────────────────────── */
+/* ── Submit button (mat-flat-button) ─────────── */
 .submit-btn {
   margin-top: 0.375rem;
-}
-
-:deep(.submit-btn.p-button) {
-  width: 100% !important;
-  height: 48px !important;
+  width: 100%;
+  height: 48px;
   border-radius: 12px !important;
   background: #4f46e5 !important;
-  border: none !important;
+  color: #fff !important;
   font-size: 1rem !important;
   font-weight: 600 !important;
   letter-spacing: 0.01em;
-  justify-content: center !important;
   box-shadow: 0 4px 14px rgba(79, 70, 229, 0.32) !important;
   transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease !important;
 }
 
-:deep(.submit-btn.p-button:not(:disabled):hover) {
+.submit-btn:not(:disabled):hover {
   background: #4338ca !important;
   box-shadow: 0 6px 20px rgba(79, 70, 229, 0.42) !important;
   transform: translateY(-1px);
 }
 
-:deep(.submit-btn.p-button:not(:disabled):active) {
-  transform: translateY(0) !important;
+.submit-btn:not(:disabled):active {
+  transform: translateY(0);
   box-shadow: 0 3px 10px rgba(79, 70, 229, 0.28) !important;
 }
 
-:deep(.submit-btn.p-button:disabled) {
+.submit-btn:disabled {
   background: #a5b4fc !important;
   box-shadow: none !important;
-  cursor: not-allowed !important;
-  opacity: 0.8 !important;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.btn-spinner {
+  display: inline-block;
+}
+
+:deep(.btn-spinner circle) {
+  stroke: #fff !important;
 }
 
 /* ── Switch link ─────────────────────────────── */
@@ -372,10 +376,19 @@
   text-underline-offset: 2px;
 }
 
-/* ── Messages ────────────────────────────────── */
+/* ── Error message block ─────────────────────── */
 .auth-messages {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
   margin-bottom: 1.25rem;
-  display: block;
+  padding: 0.75rem 1rem;
+  background: #fff5f5;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  color: #dc2626;
+  font-size: 0.875rem;
+  line-height: 1.45;
 }
 
 /* ── Responsive: tablet ──────────────────────── */

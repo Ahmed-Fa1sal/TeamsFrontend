@@ -1,0 +1,206 @@
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar__brand">
+    <div class="topbar__logo" aria-hidden="true">T</div>
+    <span class="topbar__product">Teams</span>
+  </div>
+
+  <nav class="topbar__nav" aria-label="Primary navigation">
+    <button type="button" class="topbar__nav-item topbar__nav-btn" (click)="onNavigate('/home')">
+      <i class="pi pi-th-large" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Home</span>
+    </button>
+    <span class="topbar__nav-item topbar__nav-item--active" aria-current="page">
+      <i class="pi pi-chart-bar" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Analytics</span>
+    </span>
+    <button type="button" class="topbar__nav-item topbar__nav-btn" (click)="onNavigate('/profile')">
+      <i class="pi pi-user" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Profile</span>
+    </button>
+  </nav>
+
+  <div class="topbar__end">
+    <ng-container *ngIf="currentUser">
+      <button
+        type="button"
+        class="topbar__profile-btn"
+        [matMenuTriggerFor]="profileMenu"
+        aria-label="User menu"
+      >
+        <div class="av-circle av-circle--sm topbar-av" aria-hidden="true">{{ userInitials }}</div>
+        <div class="topbar__user-info">
+          <span class="topbar__user-name">{{ fullName }}</span>
+          <span class="topbar__user-sub">{{ currentUser.username }}</span>
+        </div>
+        <i class="pi pi-chevron-down topbar__caret" aria-hidden="true"></i>
+      </button>
+    </ng-container>
+
+    <mat-menu #profileMenu="matMenu" xPosition="before" class="profile-panel">
+      <div class="pp-body" *ngIf="currentUser"
+           (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+        <div class="pp-user">
+          <div class="av-circle av-circle--lg pp-av" aria-hidden="true">{{ userInitials }}</div>
+          <div class="pp-user-info">
+            <span class="pp-name">{{ fullName }}</span>
+            <span class="pp-email">{{ currentUser.email }}</span>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+        <button type="button" mat-menu-item (click)="onNavigate('/profile')" class="pp-action-btn">
+          <i class="pi pi-user" aria-hidden="true"></i>
+          <span>My Profile</span>
+        </button>
+        <button type="button" mat-menu-item [disabled]="isLoggingOut" (click)="onLogout()" class="pp-signout-btn">
+          <i class="pi pi-sign-out" aria-hidden="true"></i>
+          <span>{{ isLoggingOut ? 'Signing out…' : 'Sign out' }}</span>
+        </button>
+      </div>
+    </mat-menu>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="dash-main">
+
+  <!-- Loading skeleton -->
+  <ng-container *ngIf="isLoading">
+    <div class="sk-stats">
+      <div class="skeleton skeleton--stat" *ngFor="let _ of [1,2,3,4]"></div>
+    </div>
+    <div class="sk-charts">
+      <div class="skeleton skeleton--card-lg"></div>
+      <div class="skeleton skeleton--card-md"></div>
+    </div>
+  </ng-container>
+
+  <!-- Content -->
+  <ng-container *ngIf="!isLoading">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Analytics</h1>
+        <p class="page-sub">Activity overview for your organization</p>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+      <div *ngFor="let s of stats" class="stat-card">
+        <div class="stat-card__icon" [ngStyle]="{ background: s.bgColor, color: s.color }">
+          <i [class]="s.icon" aria-hidden="true"></i>
+        </div>
+        <div class="stat-card__body">
+          <span class="stat-card__value">{{ s.value }}</span>
+          <span class="stat-card__label">{{ s.label }}</span>
+        </div>
+        <div class="stat-card__trend" [ngClass]="'stat-card__trend--' + s.trend">
+          <i [class]="s.trend === 'up' ? 'pi pi-arrow-up'
+                    : s.trend === 'down' ? 'pi pi-arrow-down'
+                    : 'pi pi-minus'" aria-hidden="true"></i>
+          <span>{{ s.trendText }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="charts-row">
+
+      <!-- Weekly Activity Bar Chart -->
+      <section class="chart-card card" aria-labelledby="chart-heading">
+        <div class="card__head">
+          <div class="card__head-l">
+            <span class="card__icon card__icon--purple">
+              <i class="pi pi-chart-bar" aria-hidden="true"></i>
+            </span>
+            <h2 class="card__title" id="chart-heading">Weekly Messages</h2>
+          </div>
+          <span class="chart-legend">
+            <span class="legend-dot" aria-hidden="true"></span> Messages / day
+          </span>
+        </div>
+
+        <div class="bar-chart" role="img" aria-label="Weekly messages bar chart">
+          <div *ngFor="let bar of activity" class="bar-group">
+            <div class="bar-wrap">
+              <div
+                class="activity-bar"
+                [style.height]="barHeight(bar.messages)"
+                [matTooltip]="bar.messages + ' messages'"
+                matTooltipPosition="above"
+                aria-hidden="true"
+              ></div>
+            </div>
+            <span class="bar-label">{{ bar.day }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recent Activity Feed -->
+      <section class="chart-card card" aria-labelledby="recent-heading">
+        <div class="card__head">
+          <div class="card__head-l">
+            <span class="card__icon card__icon--gray">
+              <i class="pi pi-clock" aria-hidden="true"></i>
+            </span>
+            <h2 class="card__title" id="recent-heading">Recent Activity</h2>
+          </div>
+        </div>
+        <ul class="activity-feed">
+          <li *ngFor="let item of recentActivity" class="activity-item">
+            <div class="activity-item__icon"
+                 [ngStyle]="{ background: item.color + '1a', color: item.color }">
+              <i [class]="item.icon" aria-hidden="true"></i>
+            </div>
+            <div class="activity-item__body">
+              <span class="activity-item__msg">{{ item.message }}</span>
+              <span class="activity-item__time">{{ item.time }}</span>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+    </div>
+
+    <!-- ENGAGEMENT ROW -->
+    <section class="card engage-card" aria-labelledby="engage-heading">
+      <div class="card__head">
+        <div class="card__head-l">
+          <span class="card__icon card__icon--green">
+            <i class="pi pi-chart-pie" aria-hidden="true"></i>
+          </span>
+          <h2 class="card__title" id="engage-heading">Team Engagement</h2>
+        </div>
+      </div>
+      <div class="engage-list" *ngIf="overview">
+        <div class="engage-item">
+          <span class="engage-item__label">Active Users</span>
+          <div class="engage-item__bar">
+            <mat-progress-bar mode="determinate" [value]="activeUserPct()" color="primary"></mat-progress-bar>
+          </div>
+          <span class="engage-item__pct">{{ activeUserPct() }}%</span>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="engage-item">
+          <span class="engage-item__label">Channel Utilization</span>
+          <div class="engage-item__bar">
+            <mat-progress-bar mode="determinate" [value]="72" color="accent"></mat-progress-bar>
+          </div>
+          <span class="engage-item__pct">72%</span>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="engage-item">
+          <span class="engage-item__label">Meeting Attendance</span>
+          <div class="engage-item__bar">
+            <mat-progress-bar mode="determinate" [value]="88" color="warn"></mat-progress-bar>
+          </div>
+          <span class="engage-item__pct">88%</span>
+        </div>
+      </div>
+    </section>
+
+  </ng-container>
+
+</main>
