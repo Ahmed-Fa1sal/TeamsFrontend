@@ -9,6 +9,8 @@ import { RouterOutlet } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ScrollbarComponent } from './shared/components/scrollbar/scrollbar.component';
 import { LoadingService } from '@core/services/loading.service';
+import { AuthService } from '@features/auth/services/auth.service';
+import { MediaServiceService } from '@app/services/media-service.service';
 
 @Component({
   selector: 'app-root',
@@ -19,5 +21,14 @@ import { LoadingService } from '@core/services/loading.service';
 })
 export class AppComponent {
   readonly isLoading$ = inject(LoadingService).isLoading$;
+  private readonly authService = inject(AuthService);
+  private readonly mediaService = inject(MediaServiceService);
   title = 'Teams Frontend';
+
+  constructor() {
+    const currentUserId = Number(this.authService.getCurrentUser()?.id);
+    if (currentUserId) {
+      this.mediaService.registerUser(currentUserId);
+    }
+  }
 }
