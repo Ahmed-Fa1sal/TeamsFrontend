@@ -15,7 +15,10 @@ const options = {
 const server = https.createServer(options, app);
 const io = socketIo(server, {
     cors: {
-       origin: "https://192.168.100.87:4200",  // Update with HTTPS URL
+        origin: [
+            "https://192.168.100.87:3000",
+           
+        ],
         methods: ["GET", "POST"]
     }
 });
@@ -27,7 +30,7 @@ io.on('connection', (socket) => {
 
     socket.on('register', ({ userId }) => {
         if (!userId) return;
-        const id = Number(userId);
+        const id = String(userId);
         users.set(id, socket.id);
         socket.userId = id;
         console.log(`Registered user ${id} -> ${socket.id}`);

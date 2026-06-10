@@ -2,8 +2,8 @@ import { EventEmitter, Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 
 interface SignalingPayload {
-  from: number;
-  to: number;
+  from: string;
+  to: string;
   offer?: RTCSessionDescriptionInit;
   answer?: RTCSessionDescriptionInit;
   candidate?: RTCIceCandidateInit;
@@ -15,13 +15,12 @@ interface SignalingPayload {
 export class MediaServiceService {
   private socket: Socket;  // Socket.IO client instance for signaling
   private peerConnection!: RTCPeerConnection;  // WebRTC peer connection
-  private localStream!: MediaStream;  // Local media stream (audio/video)
-  private currentUserId: number | null = null;
-  private currentPeerId: number | null = null;
-  private pendingCallerId: number | null = null;
+  private localStream: MediaStream | null = null;  // Local media stream (audio/video)
+  private currentUserId: string | null = null;
+  private currentPeerId: string | null = null;
+  private pendingCallerId: string | null = null;
   
-  public incomingCall = new EventEmitter<{ callerId: number }>();  // Notify when there's an incoming call
-  public callAccepted = new EventEmitter<MediaStream>();  // Notify when a call is accepted
+  public incomingCall = new EventEmitter<{ callerId: string }>();  // Notify when there's an incoming call
   public remoteStream = new EventEmitter<MediaStream>();  // Emit the remote video stream
   public callEnded = new EventEmitter<void>();
   
@@ -30,23 +29,27 @@ export class MediaServiceService {
     this.initializeSocketEvents();
   }
 
-  registerUser(userId: number): void {
-    this.currentUserId = userId;
-    this.socket.emit('register', { userId });
+  registerUser(userId: string | number): void {
+    this.currentUserId = String(userId);
+    this.socket.emit('register', { userId: this.currentUserId });
   }
 
-  // Request access to the local media devices (camera and microphone)
   async initializeMedia() {
     try {
       this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       return this.localStream;
-    } catch (error) {
-      console.error('Error accessing media devices.', error);
-      throw error;
+    } catch (error: any) {
+      console.warn('Video access failed, trying audio-only fallback.', error);
+      try {
+        this.localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+        return this.localStream;
+      } catch (audioError) {
+        console.error('Error accessing media devices.', audioError);
+        throw audioError;
+      }
     }
   }
 
-  // Setup events listeners for socket.io signaling messages
   private initializeSocketEvents() {
     this.socket.on('connect', () => {
       console.log('Socket connected', this.socket.id);
@@ -108,30 +111,37 @@ export class MediaServiceService {
     };
   }
 
-  // Starts a call by creating an offer and sending it to the selected member
-  async startCall(targetUserId: number) {
+  async startCall(targetUserId: string | number) {
     if (this.currentUserId === null) {
       throw new Error('Current user is not registered for signaling.');
     }
-    this.currentPeerId = targetUserId;
+    const stream = this.localStream;
+    if (!stream) {
+      throw new Error('Local media stream is not available.');
+    }
+    const targetId = String(targetUserId);
+    this.currentPeerId = targetId;
     await this.createPeerConnection();
-    this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
+    stream.getTracks().forEach(track => this.peerConnection.addTrack(track, stream));
     const offer = await this.peerConnection.createOffer();
     await this.peerConnection.setLocalDescription(offer);
     this.socket.emit('offer', {
       from: this.currentUserId,
-      to: targetUserId,
+      to: targetId,
       offer: this.peerConnection.localDescription,
     });
   }
 
-  // Accepts an incoming call by creating an answer and sending it to the caller
   async acceptCall() {
     if (this.currentUserId === null || this.pendingCallerId === null) {
       throw new Error('No incoming call to accept.');
     }
-    this.currentPeerId = this.pendingCallerId;
-    this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
+    const stream = this.localStream;
+    if (!stream) {
+      throw new Error('Local media stream is not available.');
+    }
+    this.currentPeerId = String(this.pendingCallerId);
+    stream.getTracks().forEach(track => this.peerConnection.addTrack(track, stream));
     const answer = await this.peerConnection.createAnswer();
     await this.peerConnection.setLocalDescription(answer);
     this.socket.emit('answer', {
@@ -146,14 +156,17 @@ export class MediaServiceService {
     if (this.currentUserId !== null && this.pendingCallerId !== null) {
       this.socket.emit('reject', {
         from: this.currentUserId,
-        to: this.pendingCallerId,
+        to: String(this.pendingCallerId),
       });
     }
     this.pendingCallerId = null;
     this.cleanup();
   }
 
-  // Stops the call by notifying the peer, stopping local media, and cleaning up connections
+  getPendingCallerId(): string | null {
+    return this.pendingCallerId;
+  }
+
   stopCall() {
     if (this.currentUserId !== null && this.currentPeerId !== null) {
       this.socket.emit('hangup', {
@@ -170,7 +183,6 @@ export class MediaServiceService {
     this.remoteStream.emit(null as any);
   }
 
-  // Cleans up the peer connection by closing it and releasing resources
   private cleanup() {
     if (this.peerConnection) {
       this.peerConnection.close();
