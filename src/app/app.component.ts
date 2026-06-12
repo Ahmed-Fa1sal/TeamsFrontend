@@ -1,44 +1,74 @@
-/**
- * Application Root Component
- * Main component that bootstraps the entire application
- */
-
-import { AsyncPipe, NgIf } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { trigger, transition, query, style, animate } from '@angular/animations';
+import { Subject, filter, takeUntil } from 'rxjs';
+
 import { ScrollbarComponent } from './shared/components/scrollbar/scrollbar.component';
-import { LoadingService } from '@core/services/loading.service';
+import { LoadingComponent } from './shared/components/loading/loading.component';
 import { AuthService } from '@features/auth/services/auth.service';
 import { MediaServiceService } from '@app/services/media-service.service';
+import { NotificationService } from '@features/notifications/notification.service';
+import { REDUCED_MOTION } from '@core/animations/page-animations';
+
+const routeAnimationTrigger = trigger('routeAnimation', [
+  transition('* <=> *', [
+    query(':enter', [
+      style({ opacity: 0, transform: 'translateY(16px)' }),
+      animate('350ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+    ], { optional: true })
+  ])
+]);
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, ScrollbarComponent, NgIf, AsyncPipe, MatProgressSpinnerModule, MatSnackBarModule],
+  animations: [routeAnimationTrigger],
+  imports: [
+    RouterOutlet,
+    ScrollbarComponent,
+    MatSnackBarModule,
+    LoadingComponent
+  ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
-  readonly isLoading$ = inject(LoadingService).isLoading$;
+export class AppComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly mediaService = inject(MediaServiceService);
+  private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
-  title = 'Teams Frontend';
+  private readonly destroy$ = new Subject<void>();
+
+  title = 'Teams App';
 
   ngOnInit(): void {
-    const currentUserId = this.authService.getCurrentUser()?.id;
-    if (currentUserId) {
-      this.mediaService.registerUser(currentUserId);
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser?.id) {
+      this.mediaService.registerUser(currentUser.id);
     }
 
-    this.mediaService.incomingCall.subscribe(({ callerId }) => {
-      const message = `Incoming call from user #${callerId}`;
-      const snackRef = this.snackBar.open(message, 'Open', { duration: 10000 });
+    // Single source of truth for startPolling — guarded by pollingActive inside the service.
+    // Checking on every NavigationEnd handles both:
+    //   a) Users with an existing session (already authenticated when the app loads)
+    //   b) Users who complete the login flow (first NavigationEnd after token is stored)
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      filter(() => this.authService.isAuthenticated()),
+      takeUntil(this.destroy$)
+    ).subscribe(() => this.notificationService.startPolling());
 
-      snackRef.onAction().subscribe(() => {
+    // Also try immediately in case this is a hard-refresh with a live session
+    if (this.authService.isAuthenticated()) {
+      this.notificationService.startPolling();
+    }
+
+    this.mediaService.incomingCall.pipe(takeUntil(this.destroy$)).subscribe(({ callerId }) => {
+      const message = `Incoming call from user #${callerId}`;
+      const snackRef = this.snackBar.open(message, 'Open', { duration: 10_000 });
+
+      snackRef.onAction().pipe(takeUntil(this.destroy$)).subscribe(() => {
         this.router.navigate(['/videocall']);
       });
 
@@ -46,5 +76,16 @@ export class AppComponent implements OnInit {
         this.router.navigate(['/videocall']);
       }
     });
+  }
+
+  getRouteState(outlet: RouterOutlet): string {
+    // Constant state under reduced-motion → no state change → no transition runs
+    if (REDUCED_MOTION) return 'static';
+    return outlet?.activatedRouteData?.['animation'] ?? 'default';
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

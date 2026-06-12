@@ -1,65 +1,49 @@
-<form [formGroup]="form" class="org-form">
+<h2 mat-dialog-title>{{ isEdit() ? 'Edit Organization' : 'New Organization' }}</h2>
 
-  <div class="field">
-    <label for="org-name" class="field-label">Name <span class="required">*</span></label>
-    <input
-      pInputText
-      id="org-name"
-      formControlName="name"
-      placeholder="Organization name"
-      class="w-full"
-      autocomplete="off" />
-    <app-form-error [message]="getError('name')" />
-  </div>
+<mat-dialog-content>
+  <form [formGroup]="form" class="org-form">
 
-  <div class="field">
-    <label for="org-desc" class="field-label">Description</label>
-    <textarea
-      pTextarea
-      id="org-desc"
-      formControlName="description"
-      placeholder="Short description"
-      rows="3"
-      class="w-full">
-    </textarea>
-  </div>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" placeholder="Organization name" autocomplete="off" />
+      @if (getError('name')) {
+        <mat-error>{{ getError('name') }}</mat-error>
+      }
+    </mat-form-field>
 
-  <div class="field">
-    <label for="org-logo" class="field-label">Logo URL</label>
-    <input
-      pInputText
-      id="org-logo"
-      formControlName="logoUrl"
-      placeholder="https://..."
-      class="w-full"
-      autocomplete="off" />
-  </div>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" placeholder="Short description" rows="3"></textarea>
+    </mat-form-field>
 
-  <div class="field">
-    <label for="org-tier" class="field-label">Tier <span class="required">*</span></label>
-    <p-select
-      inputId="org-tier"
-      [options]="tierOptions"
-      optionLabel="label"
-      optionValue="value"
-      formControlName="tier"
-      placeholder="Select a tier"
-      class="w-full" />
-    <app-form-error [message]="getError('tier')" />
-  </div>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Logo URL</mat-label>
+      <input matInput formControlName="logoUrl" placeholder="https://..." autocomplete="off" />
+    </mat-form-field>
 
-  <div class="form-actions">
-    <p-button
-      label="Cancel"
-      [text]="true"
-      severity="secondary"
-      (onClick)="cancel()"
-      [disabled]="submitting()" />
-    <p-button
-      [label]="isEdit() ? 'Save Changes' : 'Create'"
-      [icon]="submitting() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
-      (onClick)="submit()"
-      [disabled]="submitting()" />
-  </div>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Tier</mat-label>
+      <mat-select formControlName="tier">
+        @for (opt of tierOptions; track opt.value) {
+          <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+        }
+      </mat-select>
+      @if (getError('tier')) {
+        <mat-error>{{ getError('tier') }}</mat-error>
+      }
+    </mat-form-field>
 
-</form>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" mat-button (click)="cancel()" [disabled]="submitting()">Cancel</button>
+  <button type="button" mat-flat-button color="primary" (click)="submit()" [disabled]="submitting()">
+    @if (submitting()) {
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+    } @else {
+      <i class="pi pi-check" aria-hidden="true"></i>
+    }
+    {{ isEdit() ? 'Save Changes' : 'Create' }}
+  </button>
+</mat-dialog-actions>

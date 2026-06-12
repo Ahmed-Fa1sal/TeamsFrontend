@@ -1,0 +1,13 @@
+<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <title>Teams App — Wordmark (White)</title>
+  <!-- Icon mark (unchanged — dark bg with white marks works on any background) -->
+  <rect x="10" y="10" width="80" height="80" rx="20" fill="#0D1F3C"/>
+  <rect x="22" y="26" width="56" height="14" rx="4" fill="#ffffff"/>
+  <rect x="40" y="37" width="20" height="38" rx="4" fill="#ffffff"/>
+  <circle cx="65" cy="27" r="6" fill="#00C896"/>
+  <!-- Text — white on dark backgrounds -->
+  <text x="108" y="62" font-size="40" font-weight="700" fill="#ffffff" letter-spacing="-1.5" font-family="'Inter','Segoe UI',system-ui,sans-serif">Teams</text>
+  <text x="109" y="83" font-size="13" font-weight="400" fill="rgba(255,255,255,0.65)" letter-spacing="5" font-family="'Inter','Segoe UI',system-ui,sans-serif">APP</text>
+  <rect x="109" y="93" width="90" height="1" fill="rgba(255,255,255,0.2)"/>
+  <text x="109" y="110" font-size="11" font-weight="300" fill="rgba(255,255,255,0.4)" letter-spacing="1" font-family="'Inter','Segoe UI',system-ui,sans-serif">Work better, together.</text>
+</svg>

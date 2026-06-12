@@ -1,36 +1,17 @@
 .role-dialog {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 4px 0;
+  gap: 12px;
+  padding: 8px 0 4px;
+  min-width: 320px;
 }
 
 .member-label {
   font-size: 0.9rem;
-  color: #555;
-  margin: 0;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field-label {
-  font-size: 0.875rem;
-  font-weight: 500;
   color: #374151;
+  margin: 0;
 }
 
 .w-full {
   width: 100%;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #e5e7eb;
 }

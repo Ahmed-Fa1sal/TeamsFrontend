@@ -470,3 +470,10 @@
     font-size: 1.375rem;
   }
 }
+
+/* ── Brand logo above form ──────────────────────────── */
+.form-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}

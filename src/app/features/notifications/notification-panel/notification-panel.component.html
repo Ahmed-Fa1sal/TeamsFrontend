@@ -1,0 +1,67 @@
+<div class="notif-panel">
+
+  <div class="notif-header">
+    <h3 class="notif-title">Notifications</h3>
+    <button
+      type="button"
+      class="btn-text mark-all-btn"
+      (click)="onMarkAllRead()">
+      Mark all as read
+    </button>
+  </div>
+
+  <mat-divider />
+
+  <div class="notif-list">
+
+    <!-- Loading -->
+    @if (loading$ | async) {
+      <div class="notif-loading">
+        <mat-spinner diameter="32" />
+      </div>
+    }
+
+    <!-- Notification list -->
+    @if (!(loading$ | async)) {
+      @let items = (notifications$ | async) ?? [];
+
+      @if (items.length === 0) {
+        <div class="notif-empty">
+          <i class="pi pi-bell notif-empty__icon" aria-hidden="true"></i>
+          <p>No notifications yet.</p>
+        </div>
+      }
+
+      @for (n of items; track n.id) {
+        <div class="notif-item-wrap" [class.notif-item-wrap--unread]="!n.isRead">
+
+          <button
+            type="button"
+            class="notif-item"
+            (click)="onMarkRead(n)">
+
+            <span class="notif-item__dot" [class.notif-item__dot--visible]="!n.isRead" aria-hidden="true"></span>
+
+            <span class="notif-item__body">
+              <span class="notif-item__title">{{ n.title }}</span>
+              <span class="notif-item__msg">{{ n.message }}</span>
+              <span class="notif-item__time">{{ n.createdAt | date:'short' }}</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="btn-icon btn-icon--danger notif-item__del"
+            aria-label="Delete notification"
+            matTooltip="Delete"
+            (click)="onDelete(n, $event)">
+            <i class="pi pi-times" aria-hidden="true"></i>
+          </button>
+
+        </div>
+      }
+    }
+
+  </div>
+
+</div>

@@ -15,6 +15,7 @@ export const API_CONFIG = {
     USERS: {
       ME: '/users/me',
       PASSWORD: '/users/me/password',
+      ADMIN_CREATE: '/users',
     },
     ORGANIZATIONS: {
       BASE: '/organizations',
@@ -30,6 +31,12 @@ export const API_CONFIG = {
     ANALYTICS: {
       OVERVIEW: '/analytics/overview',
       ACTIVITY: '/analytics/activity',
+    },
+    NOTIFICATIONS: {
+      BASE: '/notifications',
+      UNREAD: '/notifications/unread',
+      UNREAD_COUNT: '/notifications/unread/count',
+      READ_ALL: '/notifications/read-all',
     },
   }
 };

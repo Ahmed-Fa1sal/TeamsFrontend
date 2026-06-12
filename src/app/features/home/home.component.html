@@ -4,8 +4,9 @@
 <header class="topbar">
 
   <div class="topbar__brand">
-    <div class="topbar__logo" aria-hidden="true">T</div>
-    <span class="topbar__product">Teams</span>
+    <a routerLink="/home" class="topbar__brand-link" aria-label="Teams App home">
+      <app-logo variant="wordmark_white" [height]="32" />
+    </a>
   </div>
 
   <nav class="topbar__nav" aria-label="Primary navigation">
@@ -16,6 +17,32 @@
   </nav>
 
   <div class="topbar__end">
+
+    <!-- Notification bell -->
+    <button
+      type="button"
+      mat-icon-button
+      class="notif-bell-btn"
+      [matMenuTriggerFor]="notifMenu"
+      (menuOpened)="onNotifPanelOpen()"
+      aria-label="Notifications"
+    >
+      <span
+        [matBadge]="(unreadCount$ | async) || null"
+        matBadgeColor="warn"
+        matBadgeSize="small"
+        matBadgeOverlap="true"
+      >
+        <i class="pi pi-bell" aria-hidden="true"></i>
+      </span>
+    </button>
+
+    <mat-menu #notifMenu="matMenu" xPosition="before" class="notif-menu-panel">
+      <div (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+        <app-notification-panel />
+      </div>
+    </mat-menu>
+
     <ng-container *ngIf="currentUser">
       <button
         type="button"
@@ -89,7 +116,7 @@
     <!-- ══════════════════════════════════════════
          WELCOME BANNER
          ══════════════════════════════════════════ -->
-    <section class="welcome" aria-label="Welcome summary">
+    <section class="welcome animate-header" aria-label="Welcome summary">
       <div class="welcome__inner">
 
         <div class="welcome__left">
@@ -122,39 +149,39 @@
 
           <!-- System Admin: total organizations count -->
           <ng-container *ngIf="isSystemAdmin">
-            <li class="wstat">
-              <span class="wstat__val">{{ orgsCount }}</span>
+            <li class="wstat stat-card">
+              <span class="wstat__val stat-value">{{ orgsCount }}</span>
               <span class="wstat__lbl">Organizations</span>
             </li>
           </ng-container>
 
           <!-- Org Admin: their org's member + team counts -->
           <ng-container *ngIf="isOrgAdmin && orgAdminOrg">
-            <li class="wstat">
-              <span class="wstat__val">{{ orgAdminOrg.memberCount }}</span>
+            <li class="wstat stat-card">
+              <span class="wstat__val stat-value">{{ orgAdminOrg.memberCount }}</span>
               <span class="wstat__lbl">Members</span>
             </li>
             <li class="wstat__sep" aria-hidden="true"></li>
-            <li class="wstat">
-              <span class="wstat__val">{{ orgAdminOrg.teamCount }}</span>
+            <li class="wstat stat-card">
+              <span class="wstat__val stat-value">{{ orgAdminOrg.teamCount }}</span>
               <span class="wstat__lbl">Teams</span>
             </li>
           </ng-container>
 
           <!-- Regular User: their orgs / teams / channels counts -->
           <ng-container *ngIf="isRegularUser">
-            <li class="wstat">
-              <span class="wstat__val">{{ orgsCount }}</span>
+            <li class="wstat stat-card">
+              <span class="wstat__val stat-value">{{ orgsCount }}</span>
               <span class="wstat__lbl">Organizations</span>
             </li>
             <li class="wstat__sep" aria-hidden="true"></li>
-            <li class="wstat">
-              <span class="wstat__val">{{ teamsCount }}</span>
+            <li class="wstat stat-card">
+              <span class="wstat__val stat-value">{{ teamsCount }}</span>
               <span class="wstat__lbl">Teams</span>
             </li>
             <li class="wstat__sep" aria-hidden="true"></li>
-            <li class="wstat">
-              <span class="wstat__val">{{ channelsCount }}</span>
+            <li class="wstat stat-card">
+              <span class="wstat__val stat-value">{{ channelsCount }}</span>
               <span class="wstat__lbl">Channels</span>
             </li>
           </ng-container>
@@ -167,7 +194,7 @@
     <!-- ══════════════════════════════════════════
          SYSTEM ADMIN PANEL
          ══════════════════════════════════════════ -->
-    <section class="card card--admin" aria-labelledby="admin-heading" *hasSystemRole="SystemRole.SYSTEM_ADMIN">
+    <section class="card card--admin animate-card" aria-labelledby="admin-heading" *hasSystemRole="SystemRole.SYSTEM_ADMIN">
       <div class="card__head">
         <div class="card__head-l">
           <span class="card__icon card__icon--purple">
@@ -199,7 +226,7 @@
     <!-- ══════════════════════════════════════════
          ORG ADMIN PANEL
          ══════════════════════════════════════════ -->
-    <section class="card card--info" aria-labelledby="orgadmin-heading"
+    <section class="card card--info animate-card" aria-labelledby="orgadmin-heading"
       *ngIf="isOrgAdmin && orgAdminOrg">
       <div class="card__head">
         <div class="card__head-l">
@@ -221,7 +248,7 @@
     <div class="dash-row3">
 
       <!-- Quick Actions -->
-      <section class="card" aria-labelledby="qa-heading">
+      <section class="card animate-card" aria-labelledby="qa-heading">
         <div class="card__head">
           <div class="card__head-l">
             <span class="card__icon card__icon--purple">
@@ -256,7 +283,7 @@
       </section>
 
       <!-- Organization Card -->
-      <section class="card" aria-labelledby="org-heading">
+      <section class="card animate-card" aria-labelledby="org-heading">
         <div class="card__head">
           <div class="card__head-l">
             <span class="card__icon card__icon--gray">
@@ -278,7 +305,7 @@
           <ul class="org-list" *ngIf="orgsList.length > 0">
             <li
               *ngFor="let org of orgsList"
-              class="org-list-row"
+              class="org-list-row animate-row"
               tabindex="0"
               [attr.aria-label]="org.name"
               (click)="onManageSpecificOrg(org.id)"
@@ -354,7 +381,7 @@
           <ul class="org-list" *ngIf="orgsList.length > 0">
             <li
               *ngFor="let org of orgsList"
-              class="org-list-row org-list-row--readonly"
+              class="org-list-row org-list-row--readonly animate-row"
               [attr.aria-label]="org.name"
             >
               <div
@@ -376,7 +403,7 @@
       </section>
 
       <!-- Coming Soon -->
-      <section class="card card--muted" aria-labelledby="cs-heading">
+      <section class="card card--muted animate-card" aria-labelledby="cs-heading">
         <div class="card__head">
           <div class="card__head-l">
             <span class="card__icon card__icon--soft">
@@ -408,7 +435,7 @@
     <div class="dash-row2" *ngIf="isRegularUser">
 
       <!-- My Teams -->
-      <section class="card" aria-labelledby="teams-heading">
+      <section class="card animate-card" aria-labelledby="teams-heading">
         <div class="card__head">
           <div class="card__head-l">
             <span class="card__icon card__icon--purple">
@@ -430,7 +457,7 @@
           <ul class="teams-list">
             <li
               *ngFor="let team of teams"
-              class="team-row"
+              class="team-row animate-row"
               tabindex="0"
               [attr.aria-label]="team.name + (team.description ? ' — ' + team.description : '')"
               (click)="onTeamOpen(team)"
@@ -483,7 +510,7 @@
       </section>
 
       <!-- My Channels -->
-      <section class="card" aria-labelledby="ch-heading">
+      <section class="card animate-card" aria-labelledby="ch-heading">
         <div class="card__head">
           <div class="card__head-l">
             <span class="card__icon card__icon--purple">
@@ -497,7 +524,7 @@
           <ul class="ch-list">
             <li
               *ngFor="let ch of channelsList"
-              class="ch-row"
+              class="ch-row animate-row"
               tabindex="0"
               [attr.aria-label]="(ch.isPublic ? 'Channel ' : 'Private channel ') + ch.name + (ch.teamName ? ' in ' + ch.teamName : '')"
               (click)="onChannelOpen(ch)"

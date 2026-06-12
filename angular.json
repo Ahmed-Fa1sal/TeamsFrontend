@@ -31,6 +31,8 @@
             ],
             "styles": [
               "node_modules/primeicons/primeicons.css",
+              "node_modules/@angular/cdk/overlay-prebuilt.css",
+              "src/styles/material-theme.scss",
               "src/styles.css"
             ],
             "scripts": []

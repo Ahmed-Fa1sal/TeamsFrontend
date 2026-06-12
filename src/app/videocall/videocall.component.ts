@@ -1,117 +1,272 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  inject
+} from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Subscription } from 'rxjs';
+
 import { MediaServiceService } from '../services/media-service.service';
 import { AuthService } from '@features/auth/services/auth.service';
+
+type CallState = 'ready' | 'incoming' | 'calling' | 'connected' | 'ended';
 
 @Component({
   selector: 'app-videocall',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MatSnackBarModule, MatTooltipModule],
   templateUrl: './videocall.component.html',
   styleUrls: ['./videocall.component.css']
 })
-export class VideocallComponent implements OnInit {
-  localStream!: MediaStream;  // Holds the local media stream (video/audio)
-  incomingCall = false;  // Flag to indicate if there’s an incoming call
-  callInProgress = false;  // Flag to track if a call is active
+export class VideocallComponent implements OnInit, OnDestroy {
+  @ViewChild('localVideo', { static: true }) private readonly localVideoRef!: ElementRef<HTMLVideoElement>;
+  @ViewChild('remoteVideo', { static: true }) private readonly remoteVideoRef!: ElementRef<HTMLVideoElement>;
+
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
+  private readonly authService = inject(AuthService);
+  private readonly webrtc = inject(MediaServiceService);
+  private readonly snackBar = inject(MatSnackBar);
+
+  callState: CallState = 'ready';
   targetUserId: string | null = null;
   targetUserName = '';
   incomingCallerId: string | null = null;
+
+  micEnabled = true;
+  camEnabled = true;
+  mediaError = false;
+  hasRemoteStream = false;
+
+  /** mm:ss formatted call duration, shown while connected */
+  callDuration = '00:00';
+
+  private localStream: MediaStream | null = null;
   private mediaReady = false;
+  private durationTimer: ReturnType<typeof setInterval> | null = null;
+  private callStartedAt = 0;
+  private navigatedAway = false;
+  private readonly subs: Subscription[] = [];
 
-  constructor(
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
-    private readonly authService: AuthService,
-    private readonly WebrtcService: MediaServiceService,
-  ) {}
-
-  rejectCall() {
-  this.WebrtcService.rejectCall();
-  this.incomingCall = false;
-  this.callInProgress = false;
-
-  const remoteVideo  = document.getElementById('remoteVideo') as HTMLVideoElement ;
-  if(remoteVideo) remoteVideo.srcObject = null;
-}
-acceptCall() {
-   this.WebrtcService.acceptCall();
-   this.incomingCall = false;
-   this.callInProgress = true;
-}
-stopCall() {
-  this.WebrtcService.stopCall();
-  this.callInProgress = false;
-
-  const localVideo = document.getElementById('localVideo') as HTMLVideoElement;
-  if (localVideo) localVideo.srcObject = null;
-}
-
-startCall() {
-  if (!this.targetUserId) {
-    console.error('No target user specified for call.');
-    return;
+  get stateLabel(): string {
+    switch (this.callState) {
+      case 'incoming': return 'Incoming call…';
+      case 'calling': return 'Calling…';
+      case 'connected': return 'Connected';
+      case 'ended': return 'Call ended';
+      default: return 'Ready';
+    }
   }
-  this.WebrtcService.startCall(this.targetUserId);
-  this.callInProgress = true;
-}
 
-  async ngOnInit(): Promise<void> {
+  get displayName(): string {
+    if (this.callState === 'incoming' && this.incomingCallerId) {
+      return `User #${this.incomingCallerId}`;
+    }
+    return this.targetUserName || (this.targetUserId ? `user #${this.targetUserId}` : 'Video call');
+  }
+
+  ngOnInit(): void {
+    void this.init();
+  }
+
+  private async init(): Promise<void> {
     const currentUserId = this.authService.getCurrentUser()?.id;
     if (!currentUserId) {
-      console.error('Cannot start call without authenticated user.');
       this.router.navigate(['/home']);
       return;
     }
 
-    this.WebrtcService.registerUser(currentUserId);
+    this.webrtc.registerUser(currentUserId);
 
-    this.route.queryParamMap.subscribe(params => {
-      this.targetUserId = params.get('targetUserId');
-      this.targetUserName = params.get('targetUserName') ?? '';
+    this.subs.push(
+      this.route.queryParamMap.subscribe(params => {
+        this.targetUserId = params.get('targetUserId');
+        this.targetUserName = params.get('targetUserName') ?? '';
+        if (this.targetUserId !== null && this.mediaReady && this.callState === 'ready') {
+          this.startCall();
+        }
+      })
+    );
 
-      if (this.targetUserId !== null && this.mediaReady && !this.incomingCall) {
-        this.startCall();
-      }
-    });
+    await this.initMedia();
+  }
 
+  private async initMedia(): Promise<void> {
     try {
-      this.localStream = await this.WebrtcService.initializeMedia();
+      this.localStream = await this.webrtc.initializeMedia();
       this.mediaReady = true;
-      const localVideo = document.getElementById('localVideo') as HTMLVideoElement;
-      if (localVideo) localVideo.srcObject = this.localStream;
+      this.mediaError = false;
+      this.localVideoRef.nativeElement.srcObject = this.localStream;
+      this.camEnabled = this.localStream.getVideoTracks().some(t => t.enabled);
+      this.micEnabled = this.localStream.getAudioTracks().some(t => t.enabled);
 
-      this.WebrtcService.incomingCall.subscribe(info => {
-        this.incomingCallerId = info.callerId;
-        this.incomingCall = true;
-      });
+      this.subs.push(
+        this.webrtc.incomingCall.subscribe(info => {
+          this.incomingCallerId = info.callerId;
+          this.callState = 'incoming';
+        }),
 
-      const pendingCallerId = this.WebrtcService.getPendingCallerId();
+        this.webrtc.remoteStream.subscribe(stream => {
+          const remote = this.remoteVideoRef.nativeElement;
+          if (stream) {
+            remote.srcObject = stream;
+            this.hasRemoteStream = true;
+            this.setConnected();
+          } else {
+            remote.srcObject = null;
+            this.hasRemoteStream = false;
+          }
+        }),
+
+        this.webrtc.callEnded.subscribe(() => this.onCallTerminated())
+      );
+
+      const pendingCallerId = this.webrtc.getPendingCallerId();
       if (pendingCallerId !== null) {
         this.incomingCallerId = pendingCallerId;
-        this.incomingCall = true;
+        this.callState = 'incoming';
+      } else if (this.targetUserId !== null) {
+        this.startCall();
       }
-
-      this.WebrtcService.remoteStream.subscribe(remoteStream => {
-        const remoteVideo = document.getElementById('remoteVideo') as HTMLVideoElement;
-        if (remoteVideo) {
-          remoteVideo.srcObject = remoteStream;
-        }
-      });
-
-      this.WebrtcService.callEnded.subscribe(() => {
-        this.callInProgress = false;
-        this.incomingCall = false;
-        this.incomingCallerId = null;
-        const remoteVideo = document.getElementById('remoteVideo') as HTMLVideoElement;
-        if (remoteVideo) {
-          remoteVideo.srcObject = null;
-        }
-      });
-    } catch (error) {
-      console.error('Error initializing media:', error);
+    } catch {
+      this.mediaError = true;
+      this.snackBar
+        .open('Camera/microphone access denied.', 'Retry', { duration: 8000 })
+        .onAction()
+        .subscribe(() => this.initMedia());
     }
   }
 
+  // ── Call control ────────────────────────────────────────────────────────
+
+  startCall(): void {
+    if (!this.targetUserId || !this.mediaReady) return;
+    this.callState = 'calling';
+    this.webrtc.startCall(this.targetUserId).catch(() => {
+      this.callState = 'ready';
+      this.snackBar.open('Could not start the call.', 'Dismiss', { duration: 4000 });
+    });
+  }
+
+  acceptCall(): void {
+    this.webrtc.acceptCall()
+      .then(() => this.setConnected())
+      .catch(() => {
+        this.callState = 'ready';
+        this.snackBar.open('Could not accept the call.', 'Dismiss', { duration: 4000 });
+      });
+  }
+
+  rejectCall(): void {
+    this.webrtc.rejectCall();
+    this.incomingCallerId = null;
+    this.callState = 'ready';
+    this.detachRemote();
+  }
+
+  endCall(): void {
+    this.webrtc.stopCall();
+    this.onCallTerminated();
+  }
+
+  goBack(): void {
+    this.navigateBack();
+  }
+
+  retryMedia(): void {
+    void this.initMedia();
+  }
+
+  // ── Mic / camera toggles (track.enabled only — no new signaling) ───────
+
+  toggleMic(): void {
+    if (!this.localStream) return;
+    this.micEnabled = !this.micEnabled;
+    this.localStream.getAudioTracks().forEach(t => { t.enabled = this.micEnabled; });
+  }
+
+  toggleCam(): void {
+    if (!this.localStream) return;
+    this.camEnabled = !this.camEnabled;
+    this.localStream.getVideoTracks().forEach(t => { t.enabled = this.camEnabled; });
+  }
+
+  // ── Internal state helpers ─────────────────────────────────────────────
+
+  private setConnected(): void {
+    if (this.callState === 'connected') return;
+    this.callState = 'connected';
+    this.callStartedAt = Date.now();
+    this.durationTimer = setInterval(() => {
+      const total = Math.floor((Date.now() - this.callStartedAt) / 1000);
+      const m = String(Math.floor(total / 60)).padStart(2, '0');
+      const s = String(total % 60).padStart(2, '0');
+      this.callDuration = `${m}:${s}`;
+    }, 1000);
+  }
+
+  /** Local or remote hang-up: clean the stage, then leave the page. */
+  private onCallTerminated(): void {
+    this.callState = 'ended';
+    this.stopDurationTimer();
+    this.detachRemote();
+    this.incomingCallerId = null;
+
+    // Brief pause so "Call ended" is visible, then navigate back
+    setTimeout(() => this.navigateBack(), 800);
+  }
+
+  private navigateBack(): void {
+    if (this.navigatedAway) return;
+    this.navigatedAway = true;
+    this.teardownMedia();
+    if (globalThis.history.length > 1) {
+      this.location.back();
+    } else {
+      this.router.navigate(['/home']);
+    }
+  }
+
+  private detachRemote(): void {
+    this.remoteVideoRef.nativeElement.srcObject = null;
+    this.hasRemoteStream = false;
+  }
+
+  /**
+   * MANDATORY teardown: the camera light must go off no matter how the
+   * user leaves this page (End Call, Back, route change, browser nav).
+   */
+  private teardownMedia(): void {
+    this.stopDurationTimer();
+
+    if (this.callState === 'calling' || this.callState === 'connected') {
+      // Notifies the peer AND stops local tracks + closes the RTCPeerConnection
+      this.webrtc.stopCall();
+    }
+
+    this.localStream?.getTracks().forEach(t => t.stop());
+    this.localStream = null;
+
+    this.localVideoRef.nativeElement.srcObject = null;
+    this.remoteVideoRef.nativeElement.srcObject = null;
+  }
+
+  private stopDurationTimer(): void {
+    if (this.durationTimer !== null) {
+      clearInterval(this.durationTimer);
+      this.durationTimer = null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.teardownMedia();
+    this.subs.forEach(s => s.unsubscribe());
+  }
 }

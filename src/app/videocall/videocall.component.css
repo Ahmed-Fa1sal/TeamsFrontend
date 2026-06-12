@@ -1,0 +1,249 @@
+/* ════════════════════════════════════════════════════════
+   Video call — dark stage (intentionally diverges from the
+   light theme; calls look better dark).
+   ════════════════════════════════════════════════════════ */
+
+:host {
+  display: block;
+  height: 100vh;
+}
+
+.call-stage {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1A1D29;
+  color: #fff;
+}
+
+/* ── Header overlay ─────────────────────────────────── */
+.call-header {
+  text-align: center;
+  padding: 20px 16px 8px;
+  flex-shrink: 0;
+}
+
+.call-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 2px;
+  color: #fff;
+}
+
+.call-state {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+.call-state--live {
+  color: var(--accent);
+}
+
+.call-duration {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Error state ────────────────────────────────────── */
+.call-error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+}
+
+.call-error__icon {
+  font-size: 2.25rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.call-error__title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.call-error__msg {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 0 8px;
+}
+
+/* ── Stage ──────────────────────────────────────────── */
+.call-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 24px;
+  min-height: 0;
+}
+
+.call-main--hidden {
+  display: none;
+}
+
+.remote-tile {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 16 / 9;
+  max-height: 100%;
+  background: #242838;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.remote-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.remote-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.remote-placeholder__avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.remote-placeholder__text {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0;
+}
+
+/* ── Local PiP ──────────────────────────────────────── */
+.local-pip {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 180px;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  background: #1A1D29;
+}
+
+.local-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Mirror own camera */
+  transform: scaleX(-1);
+}
+
+/* ── Control bar ────────────────────────────────────── */
+.call-controls {
+  display: flex;
+  justify-content: center;
+  padding: 16px 16px 28px;
+  flex-shrink: 0;
+}
+
+.controls-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ctl-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.ctl-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.ctl-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ctl-btn:active {
+  transform: scale(0.94);
+}
+
+.ctl-btn--off {
+  background: var(--danger);
+}
+
+.ctl-btn--off:hover {
+  background: #B92F2F;
+}
+
+.ctl-btn--start {
+  background: #2EA86B;
+}
+
+.ctl-btn--start:hover {
+  background: #27915C;
+}
+
+.ctl-btn--end {
+  background: var(--danger);
+}
+
+.ctl-btn--end:hover {
+  background: #B92F2F;
+}
+
+/* Hang-up: rotated handset */
+.ctl-icon--hangup {
+  transform: rotate(135deg);
+  display: inline-block;
+}
+
+/* ── Mobile ─────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .call-main {
+    padding: 8px;
+  }
+
+  .local-pip {
+    width: 120px;
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .ctl-btn {
+    width: 44px;
+    height: 44px;
+  }
+}

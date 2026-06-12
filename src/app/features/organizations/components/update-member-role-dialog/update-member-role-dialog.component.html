@@ -1,31 +1,26 @@
-<div class="role-dialog">
+<h2 mat-dialog-title>Change Role</h2>
 
-  <p class="member-label">
-    Member: <strong>{{ dialogData.memberName }}</strong>
-  </p>
+<mat-dialog-content>
+  <div class="role-dialog">
+    <p class="member-label">
+      Member: <strong>{{ dialogData.memberName }}</strong>
+    </p>
 
-  <div class="field">
-    <label for="new-role" class="field-label">New Role</label>
-    <p-select
-      inputId="new-role"
-      [options]="roleOptions"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="selectedRole()"
-      (ngModelChange)="selectedRole.set($event)"
-      class="w-full" />
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>New Role</mat-label>
+      <mat-select [ngModel]="selectedRole()" (ngModelChange)="selectedRole.set($event)">
+        @for (opt of roleOptions; track opt.value) {
+          <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
   </div>
+</mat-dialog-content>
 
-  <div class="form-actions">
-    <p-button
-      label="Cancel"
-      [text]="true"
-      severity="secondary"
-      (onClick)="cancel()" />
-    <p-button
-      label="Confirm"
-      icon="pi pi-check"
-      (onClick)="confirm()" />
-  </div>
-
-</div>
+<mat-dialog-actions align="end">
+  <button type="button" mat-button (click)="cancel()">Cancel</button>
+  <button type="button" mat-flat-button color="primary" (click)="confirm()">
+    <i class="pi pi-check" aria-hidden="true"></i>
+    Confirm
+  </button>
+</mat-dialog-actions>

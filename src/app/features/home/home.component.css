@@ -1208,3 +1208,25 @@ mat-divider {
     flex: 1 1 100%;
   }
 }
+
+/* ── Brand logo link (replaces "T" placeholder) ─────── */
+.topbar__brand-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+/* ── Card hover micro-interaction (Task 3d) ─────────── */
+.animate-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.animate-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(13, 31, 60, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-card { transition: none; }
+  .animate-card:hover { transform: none; }
+}

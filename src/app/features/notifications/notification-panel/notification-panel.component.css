@@ -1,0 +1,170 @@
+.notif-panel {
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  overflow-x: hidden;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+}
+
+/* ── Header: title + "Mark all as read" on ONE row ──── */
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px 8px;
+}
+
+.notif-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.mark-all-btn {
+  height: 30px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Scrollable list area ───────────────────────────── */
+.notif-list {
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.notif-loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.notif-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 16px;
+  color: var(--text-secondary);
+  gap: 10px;
+}
+
+.notif-empty__icon {
+  font-size: 1.8rem;
+  opacity: 0.5;
+}
+
+.notif-empty p {
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* ── Item: wrapper holds the row button + delete button
+      as SIBLINGS (no nested buttons — invalid HTML) ──── */
+.notif-item-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.notif-item-wrap:last-child {
+  border-bottom: none;
+}
+
+.notif-item-wrap:hover {
+  background: var(--bg);
+}
+
+.notif-item-wrap--unread {
+  /* --primary-light at ~40% */
+  background: rgba(232, 233, 248, 0.4);
+}
+
+.notif-item-wrap--unread:hover {
+  background: var(--primary-light);
+}
+
+.notif-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 44px 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.notif-item__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+  margin-top: 5px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.notif-item__dot--visible {
+  opacity: 1;
+}
+
+.notif-item__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notif-item__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-item__msg {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+
+.notif-item__time {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+/* Delete: absolutely positioned sibling, revealed on hover */
+.notif-item__del {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.notif-item-wrap:hover .notif-item__del,
+.notif-item__del:focus-visible {
+  opacity: 1;
+}

@@ -1,60 +1,72 @@
 <div class="channel-page">
+
+  <!-- Header card -->
   <header class="channel-header">
     <div class="channel-nav">
-      <button type="button" mat-button class="btn-back" (click)="onBack()">
+      <button type="button" class="btn-text" (click)="onBack()">
         <i class="pi pi-arrow-left" aria-hidden="true"></i>
         Back
       </button>
     </div>
-    <div class="channel-title-group">
-      <p class="channel-breadcrumb">{{ teamName || 'Team' }} / {{ channelName || ('Channel #' + channelId) }}</p>
-      <h1 class="channel-title">{{ channelName || ('Channel #' + channelId) }}</h1>
+    <div class="channel-title-group min-w-0">
+      <p class="channel-breadcrumb break-word">{{ teamName || 'Team' }} / {{ channelName || ('Channel #' + channelId) }}</p>
+      <h1 class="channel-title break-word">{{ channelName || ('Channel #' + channelId) }}</h1>
     </div>
     <div class="channel-actions">
-      <button type="button" mat-flat-button color="primary" (click)="onStartMeeting()" matTooltip="Start a meeting for this channel">
+      <button type="button" class="btn-primary" (click)="onStartMeeting()" matTooltip="Start a meeting for this channel">
         <i class="pi pi-video" aria-hidden="true"></i>
         Start meeting
       </button>
     </div>
   </header>
 
-  <main class="channel-body">
-    <section class="channel-masthead">
-      <p class="channel-label">Chat view</p>
-      <p class="channel-copy">
-        This is the channel chat page for <strong>{{ channelName || ('#' + channelId) }}</strong> in <strong>{{ teamName || 'this team' }}</strong>.
-      </p>
-    </section>
+  <!-- Single chat card: messages (scroll) + composer (pinned) -->
+  <section class="chat-card">
 
-    <section class="chat-window">
-      <div *ngIf="messages.length > 0" class="chat-messages">
-        <div *ngFor="let message of messages" class="chat-message">
-          <div class="chat-message__header">
+    <div class="chat-messages" *ngIf="messages.length > 0">
+      <div
+        *ngFor="let message of messages"
+        class="chat-bubble-row"
+        [class.chat-bubble-row--own]="isOwn(message)">
+        <div class="chat-bubble" [class.chat-bubble--own]="isOwn(message)">
+          <div class="chat-bubble__meta">
             <span class="chat-author">{{ message.author }}</span>
             <span class="chat-time">{{ message.time }}</span>
           </div>
-          <p class="chat-text">{{ message.text }}</p>
+          <p class="chat-text break-word">{{ message.text }}</p>
         </div>
       </div>
+    </div>
 
-      <div *ngIf="messages.length === 0" class="chat-empty">
-        <p>No messages yet. Start the conversation below.</p>
-      </div>
+    <div class="chat-empty" *ngIf="messages.length === 0">
+      <i class="pi pi-comments chat-empty__icon" aria-hidden="true"></i>
+      <p>No messages yet. Start the conversation.</p>
+    </div>
 
-      <form class="chat-input-row" (ngSubmit)="onSendMessage()">
-        <mat-form-field appearance="fill" class="chat-field">
-          <textarea
-            matInput
-            rows="2"
-            name="messageText"
-            [(ngModel)]="messageText"
-            placeholder="Write a message..."
-          ></textarea>
-        </mat-form-field>
-        <button mat-flat-button color="primary" type="submit" [disabled]="!messageText.trim()">
-          Send
-        </button>
-      </form>
-    </section>
-  </main>
+    <!-- Composer -->
+    <form class="chat-composer" (ngSubmit)="onSendMessage()">
+      <textarea
+        class="composer-input"
+        name="messageText"
+        [(ngModel)]="messageText"
+        cdkTextareaAutosize
+        cdkAutosizeMinRows="1"
+        cdkAutosizeMaxRows="4"
+        placeholder="Write a message…"
+        aria-label="Message"
+        (keydown)="onComposerKeydown($event)"
+      ></textarea>
+      <button
+        type="submit"
+        class="composer-send"
+        [disabled]="!messageText.trim()"
+        aria-label="Send message"
+        title="Send"
+        matTooltip="Send">
+        <i class="pi pi-send" aria-hidden="true"></i>
+      </button>
+    </form>
+
+  </section>
+
 </div>

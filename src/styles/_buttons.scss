@@ -1,0 +1,140 @@
+/* ════════════════════════════════════════════════════════
+   Centralized button system. One class per button role.
+   Imported once globally — never copy these rules into
+   component stylesheets.
+   ════════════════════════════════════════════════════════ */
+
+%btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  height: 38px;
+  min-width: 80px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+%btn-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+%btn-focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(79, 82, 178, 0.35);
+}
+
+/* ── Primary: filled indigo ─────────────────────────── */
+.btn-primary {
+  @extend %btn-base;
+  background: var(--primary);
+  color: #fff;
+  border: 1px solid var(--primary);
+
+  &:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+  &:focus-visible { @extend %btn-focus-ring; }
+  &:disabled, &[disabled] { @extend %btn-disabled; }
+}
+
+/* ── Secondary: outlined neutral ────────────────────── */
+.btn-secondary {
+  @extend %btn-base;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+
+  &:hover { background: var(--primary-light); border-color: var(--primary); }
+  &:focus-visible { @extend %btn-focus-ring; }
+  &:disabled, &[disabled] { @extend %btn-disabled; }
+}
+
+/* ── Danger: soft outline; filled red is reserved for
+      final destructive confirms inside dialogs ───────── */
+.btn-danger {
+  @extend %btn-base;
+  background: var(--surface);
+  color: var(--danger);
+  border: 1px solid var(--danger-soft-border);
+
+  &:hover { background: var(--danger-soft-bg); }
+  &:focus-visible { box-shadow: 0 0 0 2px rgba(217, 59, 59, 0.3); outline: none; }
+  &:disabled, &[disabled] { @extend %btn-disabled; }
+
+  &--filled {
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+    &:hover { background: #B92F2F; }
+  }
+}
+
+/* ── Text: borderless ───────────────────────────────── */
+.btn-text {
+  @extend %btn-base;
+  background: transparent;
+  color: var(--primary);
+  border: none;
+  min-width: unset;
+
+  &:hover { background: var(--primary-light); }
+  &:focus-visible { @extend %btn-focus-ring; }
+  &:disabled, &[disabled] { @extend %btn-disabled; }
+}
+
+/* ── Icon-only: square, tooltip required ────────────── */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover { background: var(--primary-light); color: var(--primary); }
+  &:focus-visible { @extend %btn-focus-ring; }
+  &:disabled, &[disabled] { @extend %btn-disabled; }
+
+  &--danger {
+    color: var(--danger);
+    &:hover { background: var(--danger-soft-bg); color: var(--danger); }
+  }
+}
+
+/* ── Loading state: spinner replaces label, width kept ─ */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  color: transparent !important;
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-color: rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: btn-spin 0.7s linear infinite;
+  }
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}

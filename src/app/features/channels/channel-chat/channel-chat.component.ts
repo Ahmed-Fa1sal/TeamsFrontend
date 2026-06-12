@@ -2,11 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { TextFieldModule } from '@angular/cdk/text-field';
 
 interface ChatMessage {
   id: number;
@@ -18,7 +16,13 @@ interface ChatMessage {
 @Component({
   selector: 'app-channel-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatButtonModule, MatSnackBarModule, MatTooltipModule, MatFormFieldModule, MatInputModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatSnackBarModule,
+    MatTooltipModule,
+    TextFieldModule,
+  ],
   templateUrl: './channel-chat.component.html',
   styleUrls: ['./channel-chat.component.css'],
 })
@@ -39,13 +43,25 @@ export class ChannelChatComponent implements OnInit {
     const idParam = this.route.snapshot.paramMap.get('id');
     this.channelId = idParam ? Number(idParam) : 0;
 
-    const state = window.history.state as { teamName?: string; channelName?: string };
+    const state = globalThis.history.state as { teamName?: string; channelName?: string };
     this.teamName = state?.teamName ?? '';
     this.channelName = state?.channelName ?? '';
   }
 
+  isOwn(message: ChatMessage): boolean {
+    return message.author === 'You';
+  }
+
   onBack(): void {
     this.router.navigate(['/home']);
+  }
+
+  /** Enter sends, Shift+Enter inserts a newline. */
+  onComposerKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.onSendMessage();
+    }
   }
 
   onSendMessage(): void {

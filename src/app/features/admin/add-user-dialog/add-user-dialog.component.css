@@ -1,0 +1,20 @@
+.add-user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0 4px;
+  min-width: 440px;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-row .w-full {
+  flex: 1;
+}
+
+.w-full {
+  width: 100%;
+}

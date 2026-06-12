@@ -1,0 +1,26 @@
+@if (type === 'bar') {
+  <div class="sk-wrap" [class.sk-wrap--avatar]="avatar">
+    @if (avatar) {
+      <div class="sk-avatar sk-shimmer"></div>
+    }
+    <div class="sk-lines">
+      @for (i of linesArray; track i) {
+        <div
+          class="sk-bar sk-shimmer"
+          [style.height]="height"
+          [style.width]="i === linesArray.length - 1 && linesArray.length > 1 ? '60%' : width"
+        ></div>
+      }
+    </div>
+  </div>
+}
+
+@if (type === 'table-row') {
+  <div class="sk-table-row">
+    <div class="sk-td sk-td--sm  sk-shimmer"></div>
+    <div class="sk-td sk-td--lg  sk-shimmer"></div>
+    <div class="sk-td sk-td--md  sk-shimmer"></div>
+    <div class="sk-td sk-td--sm  sk-shimmer"></div>
+    <div class="sk-td sk-td--xs  sk-shimmer"></div>
+  </div>
+}
