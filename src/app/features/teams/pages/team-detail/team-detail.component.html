@@ -52,17 +52,21 @@
 
     <!-- Stats strip -->
     <div class="stats-strip">
-      <div class="stat-item">
-        <span class="stat-value">{{ team!.memberCount ?? 0 }}</span>
+      <button type="button" class="stat-item stat-item--clickable" (click)="scrollToMembers()">
+        <span class="stat-value">{{ team!.memberCount ?? members.length }}</span>
         <span class="stat-label">Members</span>
-      </div>
+      </button>
       <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span class="stat-value">{{ team!.channelCount ?? 0 }}</span>
+      <button type="button" class="stat-item stat-item--clickable" (click)="scrollToChannels()">
+        <span class="stat-value">{{ team!.channelCount ?? channels.length }}</span>
         <span class="stat-label">Channels</span>
-      </div>
+      </button>
       <div class="stat-divider"></div>
-      <div class="stat-item">
+      <div
+        class="stat-item"
+        [matTooltip]="team!.isPublic
+          ? 'Public: anyone in the organization can find and join this team.'
+          : 'Private: members are added by an owner or admin.'">
         <span class="stat-value">{{ team!.isPublic ? 'Public' : 'Private' }}</span>
         <span class="stat-label">Visibility</span>
       </div>
@@ -90,80 +94,131 @@
       </div>
     </div>
 
-    <!-- Members list -->
-    <ng-container *ngIf="members.length > 0">
-      <div class="section-divider"></div>
+    <!-- Members -->
+    <div class="section-divider"></div>
+    <div class="section-block" #membersSection>
       <div class="section-header">
-        <i class="pi pi-users" aria-hidden="true"></i>
-        <span>Members</span>
-        <span class="member-count">{{ members.length }}</span>
+        <div class="section-header__left">
+          <span class="section-header__icon" aria-hidden="true"><i class="pi pi-users"></i></span>
+          <div class="section-header__text">
+            <h2 class="section-header__title">Members</h2>
+          </div>
+          <span class="count-chip">{{ members.length }}</span>
+        </div>
+        <button
+          *ngIf="canManageThisTeam"
+          type="button"
+          class="btn-primary-soft"
+          (click)="openAddMember()"
+          [disabled]="isActing">
+          <i class="pi pi-user-plus" aria-hidden="true"></i>
+          <span class="btn-label">Add Member</span>
+        </button>
       </div>
-      <ul class="member-list" role="list">
+
+      <ul class="member-list" role="list" *ngIf="members.length > 0">
         <li class="member-item" *ngFor="let m of members" role="listitem">
           <div class="member-avatar">{{ memberInitials(m) }}</div>
           <div class="member-info">
             <span class="member-name">{{ memberDisplayName(m) }}</span>
             <span class="member-username">&#64;{{ m.user.username }}</span>
           </div>
-          <button
-            type="button"
-            mat-stroked-button
-            color="primary"
-            class="btn-call-member"
-            (click)="onCallMember(m)"
-            matTooltip="Call {{ memberDisplayName(m) }}"
-          >
-            <i class="pi pi-phone" aria-hidden="true"></i>
-            Call
-          </button>
-          <span class="role-badge" [class]="'role-badge--' + m.role.toLowerCase()">
-            {{ m.role | titlecase }}
-          </span>
+
+          <div class="member-actions">
+            <button
+              type="button"
+              class="btn-call"
+              (click)="onCallMember(m)"
+              matTooltip="Call {{ memberDisplayName(m) }}"
+              [attr.aria-label]="'Call ' + memberDisplayName(m)">
+              <i class="pi pi-phone" aria-hidden="true"></i>
+              <span class="btn-label">Call</span>
+            </button>
+
+            <span class="role-badge" [class]="'role-badge--' + roleBadgeModifier(m.role)">
+              {{ m.role | titlecase }}
+            </span>
+
+            <button
+              *ngIf="canActOnMember(m)"
+              type="button"
+              class="btn-icon"
+              [matMenuTriggerFor]="memberMenu"
+              [attr.aria-label]="'Member actions for ' + memberDisplayName(m)"
+              title="More actions"
+              matTooltip="More actions">
+              <i class="pi pi-ellipsis-v" aria-hidden="true"></i>
+            </button>
+
+            <mat-menu #memberMenu="matMenu" xPosition="before">
+              <button type="button" mat-menu-item class="menu-item--danger" (click)="confirmRemoveMember(m)">
+                <i class="pi pi-user-minus" aria-hidden="true"></i>
+                <span>Remove from Team</span>
+              </button>
+            </mat-menu>
+          </div>
         </li>
       </ul>
-    </ng-container>
 
-    <div class="section-divider"></div>
-    <div class="section-header">
-      <i class="pi pi-hashtag" aria-hidden="true"></i>
-      <span>Channels</span>
-      <span class="member-count">{{ channels.length }}</span>
+      <p class="empty-copy" *ngIf="members.length === 0">No members yet.</p>
     </div>
 
-    <ng-container *ngIf="isChannelsLoading">
-      <p class="loading-copy">Loading channels…</p>
-    </ng-container>
-
-    <ng-container *ngIf="!isChannelsLoading && channels.length > 0">
-      <ul class="channel-list" role="list">
-        <li
-          class="channel-item"
-          *ngFor="let channel of channels"
-          role="listitem"
-          tabindex="0"
-          (click)="onChannelOpen(channel)"
-          (keydown.enter)="onChannelOpen(channel)"
-        >
-          <div class="channel-item__main">
-            <span class="channel-item__name">#{{ channel.name }}</span>
-            <span class="channel-item__visibility">{{ channel.isPublic ? 'Public' : 'Private' }}</span>
+    <div class="section-divider"></div>
+    <div class="section-block" #channelsSection>
+      <div class="section-header">
+        <div class="section-header__left">
+          <span class="section-header__icon" aria-hidden="true"><i class="pi pi-hashtag"></i></span>
+          <div class="section-header__text">
+            <h2 class="section-header__title">Channels</h2>
           </div>
-          <div class="channel-item__meta">
-            <span>{{ channel.description || 'No description' }}</span>
-            <span>{{ channel.memberCount ?? 0 }} members</span>
-          </div>
-        </li>
-      </ul>
-    </ng-container>
+          <span class="count-chip">{{ channels.length }}</span>
+        </div>
+        <button
+          *ngIf="canManageThisTeam"
+          type="button"
+          class="btn-primary-soft"
+          (click)="openCreateChannel()"
+          [disabled]="isActing || team!.archived">
+          <i class="pi pi-plus" aria-hidden="true"></i>
+          <span class="btn-label">Create Channel</span>
+        </button>
+      </div>
 
-    <ng-container *ngIf="!isChannelsLoading && channels.length === 0">
-      <p class="empty-copy">No channels found for this team yet.</p>
-    </ng-container>
+      <ng-container *ngIf="isChannelsLoading">
+        <p class="loading-copy">Loading channels…</p>
+      </ng-container>
+
+      <ng-container *ngIf="!isChannelsLoading && channels.length > 0">
+        <ul class="channel-list">
+          <li
+            class="channel-item"
+            *ngFor="let channel of channels"
+            tabindex="0"
+            (click)="onChannelOpen(channel)"
+            (keydown.enter)="onChannelOpen(channel)"
+          >
+            <div class="channel-item__body">
+              <div class="channel-item__main">
+                <span class="channel-item__name">#{{ channel.name }}</span>
+                <span class="channel-item__visibility">{{ channel.isPublic ? 'Public' : 'Private' }}</span>
+                <span class="channel-item__members">{{ channel.memberCount ?? 0 }} members</span>
+              </div>
+              <span class="channel-item__desc">{{ channel.description || 'No description' }}</span>
+            </div>
+            <i class="pi pi-angle-right channel-item__chevron" aria-hidden="true"></i>
+          </li>
+        </ul>
+      </ng-container>
+
+      <ng-container *ngIf="!isChannelsLoading && channels.length === 0">
+        <p class="empty-copy">No channels found for this team yet.</p>
+      </ng-container>
+    </div>
 
     <!-- Actions -->
     <div class="section-divider"></div>
     <div class="action-bar">
-      <button type="button" mat-button class="btn-back" (click)="onBack()">
+      <button type="button" class="btn-text btn-back" (click)="onBack()">
         <i class="pi pi-arrow-left" aria-hidden="true"></i>
         Back to Home
       </button>
@@ -172,8 +227,7 @@
         <!-- Unarchive: Team OWNER/ADMIN, ORG_ADMIN, SYSTEM_ADMIN -->
         <button
           type="button"
-          mat-stroked-button
-          class="btn-unarchive"
+          class="btn-secondary btn-unarchive"
           *ngIf="team!.archived && canManageThisTeam"
           [disabled]="isActing"
           (click)="onUnarchive()"
@@ -183,47 +237,30 @@
           Unarchive
         </button>
 
-        <!-- Create Channel: Team OWNER/ADMIN, ORG_ADMIN, SYSTEM_ADMIN -->
-        <button
-          type="button"
-          mat-flat-button
-          class="btn-create-channel"
-          *ngIf="canManageThisTeam"
-          [disabled]="isActing || team!.archived"
-          (click)="openCreateChannel()"
-          matTooltip="Create a new channel in this team"
-        >
-          <i class="pi pi-plus" aria-hidden="true"></i>
-          Create channel
-        </button>
-
         <!-- Archive: Team OWNER/ADMIN, ORG_ADMIN, SYSTEM_ADMIN -->
         <button
           type="button"
-          mat-stroked-button
-          class="btn-archive"
+          class="btn-secondary btn-archive"
           *ngIf="!team!.archived && canManageThisTeam"
           [disabled]="isActing"
           (click)="onArchive()"
           matTooltip="Archive this team"
         >
           <i class="pi pi-box" aria-hidden="true"></i>
-          Archive
+          Archive team
         </button>
 
         <!-- Delete: Team OWNER, ORG_ADMIN, SYSTEM_ADMIN only (not ADMIN) -->
         <button
           type="button"
-          mat-flat-button
-          class="btn-delete"
+          class="btn-danger"
           *ngIf="canDeleteThisTeam"
           [disabled]="isActing"
           (click)="onDelete()"
           matTooltip="Permanently delete this team"
         >
-          <mat-spinner *ngIf="isActing" diameter="16" class="btn-spinner"></mat-spinner>
-          <i class="pi pi-trash" aria-hidden="true" *ngIf="!isActing"></i>
-          {{ isActing ? 'Working…' : 'Delete team' }}
+          <i class="pi pi-trash" aria-hidden="true"></i>
+          Delete team
         </button>
       </div>
     </div>

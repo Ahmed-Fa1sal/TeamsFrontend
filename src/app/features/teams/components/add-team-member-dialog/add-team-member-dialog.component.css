@@ -1,0 +1,23 @@
+.add-member-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+  min-width: 360px;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.form-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 480px) {
+  .add-member-form {
+    min-width: 0;
+  }
+}

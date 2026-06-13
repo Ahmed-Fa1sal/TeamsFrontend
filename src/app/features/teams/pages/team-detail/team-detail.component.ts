@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -14,6 +14,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
 
 import gsap from 'gsap';
 
@@ -21,11 +22,18 @@ import { TeamManagementFetcherService } from '../../services/team-management-fet
 import { AuthService } from '@features/auth/services/auth.service';
 import { PermissionService } from '@core/services/permission.service';
 import { TeamRole } from '@core/auth/roles';
-import { Channel, Team, TeamMember } from '../../models/team.models';
+import { Channel, Team, TeamMember, TeamMemberRole } from '../../models/team.models';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import {
+  AddTeamMemberDialogComponent,
+  AddTeamMemberDialogData,
+} from '../../components/add-team-member-dialog/add-team-member-dialog.component';
+
+const REDUCED_MOTION =
+  typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 @Component({
   selector: 'app-team-detail',
@@ -42,12 +50,15 @@ import {
     MatInputModule,
     MatCheckboxModule,
     MatTooltipModule,
+    MatMenuModule,
   ],
   templateUrl: './team-detail.component.html',
   styleUrl: './team-detail.component.css',
 })
 export class TeamDetailComponent implements OnInit, OnDestroy {
   @ViewChild('createChannelDialog') private createChannelDialog!: TemplateRef<unknown>;
+  @ViewChild('membersSection') private readonly membersSection?: ElementRef<HTMLElement>;
+  @ViewChild('channelsSection') private readonly channelsSection?: ElementRef<HTMLElement>;
 
   team: Team | null = null;
   isLoading = true;
@@ -100,7 +111,9 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
           this.syncTeamContext();
           this.loadTeamChannels();
           setTimeout(() => {
+            if (REDUCED_MOTION) return;
             gsap.from('.detail-card', { y: 24, opacity: 0, duration: 0.4, ease: 'power2.out' });
+            gsap.from('.section-header', { y: 8, opacity: 0, duration: 0.3, stagger: 0.05, ease: 'power2.out', delay: 0.15 });
             gsap.from('.member-item', { y: 12, opacity: 0, duration: 0.3, stagger: 0.05, ease: 'power2.out', delay: 0.2 });
           }, 0);
         },
@@ -291,6 +304,93 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
     this.channelName = '';
     this.channelDescription = '';
     this.channelIsPublic = true;
+  }
+
+  // ── Members management ───────────────────────────────────────────────────
+
+  openAddMember(): void {
+    if (!this.team) return;
+    const data: AddTeamMemberDialogData = {
+      teamId: this.teamId,
+      teamName: this.team.name,
+      existingMemberIds: this.members.map(m => m.user.id),
+    };
+
+    this.dialog
+      .open(AddTeamMemberDialogComponent, { width: '460px', maxWidth: '92vw', data })
+      .afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(result => {
+        if (!result) return;
+        this.loadTeam();
+        setTimeout(() => {
+          if (REDUCED_MOTION) return;
+          gsap.from('.member-item:last-of-type', {
+            opacity: 0, x: -8, duration: 0.3, ease: 'power2.out',
+          });
+        }, 0);
+      });
+  }
+
+  confirmRemoveMember(member: TeamMember): void {
+    if (!this.team) return;
+    const name = this.memberDisplayName(member);
+    const data: ConfirmDialogData = {
+      header: 'Remove member?',
+      message: `Remove ${name} from ${this.team.name}? They will lose access to all channels in this team.`,
+      acceptLabel: 'Remove',
+      rejectLabel: 'Cancel',
+    };
+
+    this.dialog
+      .open(ConfirmDialogComponent, { data, panelClass: 'signout-dialog', width: '360px' })
+      .afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((confirmed: boolean) => {
+        if (!confirmed) return;
+        this.teamService
+          .removeTeamMember(this.teamId, member.user.id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open(`${name} removed from the team.`, 'Dismiss', { duration: 3000 });
+              this.loadTeam();
+            },
+            error: () =>
+              this.snackBar.open('Failed to remove member.', 'Dismiss', { duration: 3000 }),
+          });
+      });
+  }
+
+  // TODO: implement "Change Role" once a team change-role endpoint and dialog
+  // exist (e.g. TeamManagementFetcherService.changeMemberRole +
+  // PATCH /teams/{id}/members/{userId}/role). Omitted from the overflow menu
+  // for now to avoid inventing a backend contract.
+
+  scrollToMembers(): void {
+    this.membersSection?.nativeElement.scrollIntoView({
+      behavior: REDUCED_MOTION ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }
+
+  scrollToChannels(): void {
+    this.channelsSection?.nativeElement.scrollIntoView({
+      behavior: REDUCED_MOTION ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }
+
+  /** Owner/Admin can act on members other than themselves; the owner row is never removable. */
+  canActOnMember(member: TeamMember): boolean {
+    const currentUserId = Number(this.authService.getCurrentUser()?.id);
+    return this.canManageThisTeam
+      && member.user.id !== currentUserId
+      && member.role !== 'OWNER';
+  }
+
+  roleBadgeModifier(role: TeamMemberRole): string {
+    return role.toLowerCase();
   }
 
   // ── Permission getters for the template ──────────────────────────────────
