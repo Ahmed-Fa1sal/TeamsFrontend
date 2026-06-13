@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule, AsyncPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { Subject, forkJoin, of } from 'rxjs';
 import { takeUntil, catchError } from 'rxjs/operators';
@@ -22,7 +23,12 @@ import { SystemRole, OrganizationRole } from '@core/auth/roles';
 import { TeamManagementFetcherService } from '../teams/services/team-management-fetcher.service';
 import { OrganizationService } from '../organizations/services/organization.service';
 import { Team as ApiTeam, Channel as ApiChannel } from '../teams/models/team.models';
-import { OrganizationResponse } from '../organizations/models/organization.model';
+import { CreateOrganizationRequest, OrganizationResponse } from '../organizations/models/organization.model';
+import {
+  OrganizationFormComponent,
+  OrgFormDialogData,
+  OrgFormResult,
+} from '../organizations/components/organization-form/organization-form.component';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -331,7 +337,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.router.navigate(['/teams/new']);
         break;
       case 'create-org':
-        this.router.navigate(['/organizations']);
+        this.openCreateOrgDialog();
         break;
       case 'add-user':
         this.openAddUserDialog();
@@ -352,6 +358,36 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   openAddUserDialog(): void {
     this.dialog.open(AddUserDialogComponent, { width: '520px' });
+  }
+
+  openCreateOrgDialog(): void {
+    const ref = this.dialog.open(OrganizationFormComponent, {
+      width: '480px',
+      maxWidth: '92vw',
+      data: { mode: 'create' } satisfies OrgFormDialogData,
+    });
+
+    ref.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result: OrgFormResult | null) => {
+        if (!result) return;
+        this.orgService.createOrganization(result as CreateOrganizationRequest)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Organization created.', 'Dismiss', { duration: 3000 });
+              if (this.isSystemAdmin) {
+                this.loadAdminData();
+              }
+            },
+            error: (err: HttpErrorResponse) =>
+              this.snackBar.open(
+                err.error?.message ?? 'Failed to create organization.',
+                'Dismiss',
+                { duration: 4000 },
+              ),
+          });
+      });
   }
 
   onTeamOpen(team: Team): void {

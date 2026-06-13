@@ -194,33 +194,57 @@
     <!-- ══════════════════════════════════════════
          SYSTEM ADMIN PANEL
          ══════════════════════════════════════════ -->
-    <section class="card card--admin animate-card" aria-labelledby="admin-heading" *hasSystemRole="SystemRole.SYSTEM_ADMIN">
-      <div class="card__head">
-        <div class="card__head-l">
-          <span class="card__icon card__icon--purple">
-            <i class="pi pi-shield" aria-hidden="true"></i>
+    <section class="card admin-card animate-card" aria-labelledby="admin-heading" *hasSystemRole="SystemRole.SYSTEM_ADMIN">
+
+      <!-- Section header (shared pattern) -->
+      <div class="section-header">
+        <div class="section-header__left">
+          <span class="section-header__icon" aria-hidden="true">
+            <i class="pi pi-shield"></i>
           </span>
-          <h2 class="card__title" id="admin-heading">System Administration</h2>
+          <div class="section-header__text">
+            <h2 class="section-header__title" id="admin-heading">System Administration</h2>
+            <p class="section-header__subtitle">Manage organizations and system users</p>
+          </div>
         </div>
-        <span class="role-badge role-badge--admin">SYSTEM ADMIN</span>
+        <span class="section-chip">SYSTEM ADMIN</span>
       </div>
-      <div class="admin-actions">
-        <button type="button" mat-flat-button color="primary" class="admin-action-btn"
+
+      <div class="section-divider"></div>
+
+      <!-- Action card grid -->
+      <div class="admin-grid">
+        <button
+          type="button"
+          class="action-card"
+          aria-label="Manage Organizations. View and manage all organizations."
           (click)="onNavigate('/organizations')">
-          <i class="pi pi-building" aria-hidden="true"></i>
-          Manage Organizations
+          <span class="action-card__icon" aria-hidden="true"><i class="pi pi-building"></i></span>
+          <span class="action-card__title">Manage Organizations</span>
+          <span class="action-card__desc">View and manage all organizations.</span>
         </button>
-        <button type="button" mat-stroked-button class="admin-action-btn"
+
+        <button
+          type="button"
+          class="action-card"
+          aria-label="Create Organization. Set up a new organization."
           (click)="onQuickAction('create-org')">
-          <i class="pi pi-plus" aria-hidden="true"></i>
-          Create Organization
+          <span class="action-card__icon" aria-hidden="true"><i class="pi pi-plus-circle"></i></span>
+          <span class="action-card__title">Create Organization</span>
+          <span class="action-card__desc">Set up a new organization.</span>
         </button>
-        <button type="button" mat-stroked-button class="admin-action-btn"
+
+        <button
+          type="button"
+          class="action-card"
+          aria-label="Add User. Add a system user to the platform."
           (click)="onQuickAction('add-user')">
-          <i class="pi pi-user-plus" aria-hidden="true"></i>
-          Add User
+          <span class="action-card__icon" aria-hidden="true"><i class="pi pi-user-plus"></i></span>
+          <span class="action-card__title">Add User</span>
+          <span class="action-card__desc">Add a system user to the platform.</span>
         </button>
       </div>
+
     </section>
 
     <!-- ══════════════════════════════════════════
