@@ -68,17 +68,19 @@
       </mat-form-field>
 
       <!-- Organization selector -->
-      <mat-form-field appearance="outline" class="field-org">
-        <mat-label>Organization</mat-label>
-        <mat-select formControlName="organization_id" required>
-          <mat-option value="" disabled>Select organization</mat-option>
-          <mat-option *ngFor="let org of organizations" [value]="org.id">
-            {{ org.name }}
-          </mat-option>
-        </mat-select>
-        <mat-hint>Select the organization name; the form will send its ID.</mat-hint>
-        <mat-error *ngIf="form.get('organization_id')?.hasError('required')">Organization is required</mat-error>
-      </mat-form-field>
+      <div class="org-row">
+        <mat-form-field appearance="outline" class="field-org">
+          <mat-label>Organization</mat-label>
+          <mat-select formControlName="organization_id" required>
+            <mat-option value="" disabled>Select organization</mat-option>
+            <mat-option *ngFor="let org of organizations" [value]="org.id">
+              {{ org.name }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('organization_id')?.hasError('required')">Organization is required</mat-error>
+        </mat-form-field>
+        <p class="org-help">Select the organization name; the form will send its ID.</p>
+      </div>
 
       <!-- Public / Private toggle -->
       <div class="toggle-row">

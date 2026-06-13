@@ -40,6 +40,7 @@
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>Password</mat-label>
       <input matInput type="password" formControlName="password" autocomplete="new-password" />
+      <mat-hint>8+ chars with uppercase, lowercase, and a number</mat-hint>
       @if (getError('password')) {
         <mat-error>{{ getError('password') }}</mat-error>
       }

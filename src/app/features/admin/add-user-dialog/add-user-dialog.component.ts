@@ -5,12 +5,19 @@ import {
   signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  Validators,
+  AbstractControl,
+  ValidationErrors
+} from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AdminUserService, CreateUserRequest } from '../admin-user.service';
 
 @Component({
@@ -42,8 +49,17 @@ export class AddUserDialogComponent {
     lastName:  ['', [Validators.required, Validators.minLength(2)]],
     username:  ['', [Validators.required, Validators.minLength(3), Validators.pattern(/^\w+$/)]],
     email:     ['', [Validators.required, Validators.email]],
-    password:  ['', [Validators.required, Validators.minLength(8)]]
+    password:  ['', [Validators.required, Validators.minLength(8), AddUserDialogComponent.passwordPolicy]]
   });
+
+  /** Backend requires upper + lower + number — mirror it so weak
+   *  passwords are caught here instead of failing server-side. */
+  private static passwordPolicy(control: AbstractControl): ValidationErrors | null {
+    const value: string = control.value ?? '';
+    if (!value) return null;
+    const ok = /[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value);
+    return ok ? null : { weakPassword: true };
+  }
 
   getError(field: string): string | null {
     const ctrl = this.form.get(field);
@@ -53,6 +69,8 @@ export class AddUserDialogComponent {
     if (ctrl.hasError('minlength'))
       return `Minimum ${ctrl.errors['minlength'].requiredLength} characters`;
     if (ctrl.hasError('pattern'))   return 'Only letters, numbers and underscores';
+    if (ctrl.hasError('weakPassword'))
+      return 'Must include an uppercase letter, a lowercase letter, and a number';
     return null;
   }
 
@@ -66,20 +84,39 @@ export class AddUserDialogComponent {
     const value = this.form.getRawValue() as CreateUserRequest;
 
     this.adminUserService.createUser(value).subscribe({
-      next: user => {
+      next: created => {
         this.submitting.set(false);
-        this.snackBar.open(`User "${user.username}" created successfully.`, 'Dismiss', { duration: 4000 });
+        const name = created?.username ?? value.username;
+        this.snackBar.open(`User "${name}" created successfully.`, 'Dismiss', { duration: 4000 });
         this.dialogRef.close(true);
       },
       error: err => {
         this.submitting.set(false);
-        const msg = err.error?.message ?? 'Failed to create user. Please try again.';
-        this.snackBar.open(msg, 'Dismiss', { duration: 5000 });
+        this.snackBar.open(this.describeError(err), 'Dismiss', { duration: 6000 });
       }
     });
   }
 
   cancel(): void {
     this.dialogRef.close(false);
+  }
+
+  /** Surface the backend's real message + status instead of a generic line. */
+  private describeError(err: unknown): string {
+    if (err instanceof HttpErrorResponse) {
+      if (err.status === 0) {
+        return 'Cannot reach the server. Is the backend running?';
+      }
+      // Backend sends duplicate-user and validation failures as 400 with a
+      // message body, e.g. {"message":"Email already registered"}.
+      const serverMsg: string | undefined =
+        err.error?.message ?? err.error?.error ?? undefined;
+      if (serverMsg) return serverMsg;
+      if (err.status === 403) {
+        return 'You are not allowed to create users (server returned 403).';
+      }
+      return `Failed to create user (error ${err.status}).`;
+    }
+    return 'Failed to create user. Please try again.';
   }
 }

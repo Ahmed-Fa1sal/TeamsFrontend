@@ -12,20 +12,28 @@ export interface CreateUserRequest {
 }
 
 export interface CreateUserResponse {
-  id: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  email: string;
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  email?: string;
+  message?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AdminUserService {
   private readonly http = inject(HttpClient);
 
+  /**
+   * Creates a user through the registration endpoint — the proven
+   * user-creation path on this backend (same payload the public
+   * register flow uses). It is allow-listed in the JWT interceptor,
+   * and because we call HttpClient directly here, the admin's own
+   * auth state is never touched by the response.
+   */
   createUser(request: CreateUserRequest): Observable<CreateUserResponse> {
     return this.http.post<CreateUserResponse>(
-      getApiUrl(API_CONFIG.ENDPOINTS.USERS.ADMIN_CREATE),
+      getApiUrl(API_CONFIG.ENDPOINTS.AUTH.REGISTER),
       request
     );
   }
