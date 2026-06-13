@@ -1,6 +1,6 @@
 <div class="channel-page">
 
-  <!-- Header card -->
+  <!-- Header card (UNCHANGED) -->
   <header class="channel-header">
     <div class="channel-nav">
       <button type="button" class="btn-text" (click)="onBack()">
@@ -20,31 +20,84 @@
     </div>
   </header>
 
-  <!-- Single chat card: messages (scroll) + composer (pinned) -->
+  <!-- Chat card -->
   <section class="chat-card">
 
-    <div class="chat-messages" *ngIf="messages.length > 0">
-      <div
-        *ngFor="let message of messages"
-        class="chat-bubble-row"
-        [class.chat-bubble-row--own]="isOwn(message)">
-        <div class="chat-bubble" [class.chat-bubble--own]="isOwn(message)">
-          <div class="chat-bubble__meta">
-            <span class="chat-author">{{ message.author }}</span>
-            <span class="chat-time">{{ message.time }}</span>
-          </div>
-          <p class="chat-text break-word">{{ message.text }}</p>
+    <!-- Messages -->
+    <div
+      #messagesArea
+      class="chat-messages"
+      role="log"
+      aria-live="polite"
+      aria-atomic="false"
+      (scroll)="onMessagesScroll()">
+
+      @if (messages.length === 0) {
+        <div class="chat-empty">
+          <span class="chat-empty__icon" aria-hidden="true"><i class="pi pi-comments"></i></span>
+          <h2 class="chat-empty__title">No messages yet</h2>
+          <p class="chat-empty__sub">Start the conversation by sending a message below.</p>
         </div>
-      </div>
+      } @else {
+        @for (group of groups; track group.dateLabel) {
+          <div class="date-sep" role="separator" [attr.aria-label]="group.dateLabel">
+            <span class="date-sep__pill">{{ group.dateLabel }}</span>
+          </div>
+
+          @for (m of group.messages; track m.id; let i = $index) {
+            <div
+              class="msg-row"
+              [class.msg-row--own]="m.isOwn"
+              [class.msg-row--grouped]="!startsAuthorGroup(group.messages, i)"
+              [class.msg-row--tail]="endsAuthorGroup(group.messages, i)"
+              [attr.aria-label]="ariaForMessage(m)">
+
+              @if (!m.isOwn) {
+                <div class="msg-avatar" aria-hidden="true">
+                  @if (startsAuthorGroup(group.messages, i)) { {{ m.authorInitials }} }
+                </div>
+              }
+
+              <div class="msg-content">
+                @if (startsAuthorGroup(group.messages, i)) {
+                  <div class="msg-meta">
+                    <span class="msg-author">{{ m.isOwn ? 'You' : m.authorName }}</span>
+                    <span class="msg-time">{{ timeLabelFor(m.sentAt) }}</span>
+                  </div>
+                }
+                <div class="msg-bubble">{{ m.text }}</div>
+              </div>
+
+              @if (m.isOwn) {
+                <div class="msg-avatar msg-avatar--own" aria-hidden="true">
+                  @if (startsAuthorGroup(group.messages, i)) { {{ m.authorInitials }} }
+                </div>
+              }
+            </div>
+          }
+        }
+      }
     </div>
 
-    <div class="chat-empty" *ngIf="messages.length === 0">
-      <i class="pi pi-comments chat-empty__icon" aria-hidden="true"></i>
-      <p>No messages yet. Start the conversation.</p>
-    </div>
+    <!-- New-messages pill -->
+    @if (showNewPill) {
+      <button type="button" class="new-pill" (click)="scrollToLatest()">
+        New messages <i class="pi pi-arrow-down" aria-hidden="true"></i>
+      </button>
+    }
 
     <!-- Composer -->
     <form class="chat-composer" (ngSubmit)="onSendMessage()">
+      <button
+        type="button"
+        class="composer-attach"
+        disabled
+        aria-disabled="true"
+        aria-label="Attach file"
+        matTooltip="Attach file">
+        <i class="pi pi-paperclip" aria-hidden="true"></i>
+      </button>
+
       <textarea
         class="composer-input"
         name="messageText"
@@ -54,16 +107,21 @@
         cdkAutosizeMaxRows="4"
         placeholder="Write a message…"
         aria-label="Message"
-        (keydown)="onComposerKeydown($event)"
-      ></textarea>
+        aria-describedby="composer-hint"
+        (keydown)="onComposerKeydown($event)"></textarea>
+      <span id="composer-hint" class="sr-only">Press Enter to send, Shift+Enter for new line</span>
+
       <button
         type="submit"
         class="composer-send"
-        [disabled]="!messageText.trim()"
+        [disabled]="!messageText.trim() || sending"
         aria-label="Send message"
-        title="Send"
-        matTooltip="Send">
-        <i class="pi pi-send" aria-hidden="true"></i>
+        matTooltip="Send (Enter)">
+        @if (sending) {
+          <mat-spinner diameter="16" />
+        } @else {
+          <i class="pi pi-send" aria-hidden="true"></i>
+        }
       </button>
     </form>
 
