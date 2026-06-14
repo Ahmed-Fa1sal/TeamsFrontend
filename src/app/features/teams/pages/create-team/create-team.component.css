@@ -159,8 +159,27 @@
   width: 100%;
 }
 
+.org-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 .field-org {
   width: 200px;
+}
+
+.org-help {
+  flex: 1;
+  min-width: 180px;
+  margin: 0;
+  /* lift to align with the select box, above the error-message slot */
+  align-self: flex-start;
+  margin-top: 18px;
+  color: #8a8886;
+  font-size: 0.8125rem;
+  line-height: 1.4;
 }
 
 .optional-tag {

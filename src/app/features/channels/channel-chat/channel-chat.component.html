@@ -1,60 +1,130 @@
 <div class="channel-page">
+
+  <!-- Header card (UNCHANGED) -->
   <header class="channel-header">
     <div class="channel-nav">
-      <button type="button" mat-button class="btn-back" (click)="onBack()">
+      <button type="button" class="btn-text" (click)="onBack()">
         <i class="pi pi-arrow-left" aria-hidden="true"></i>
         Back
       </button>
     </div>
-    <div class="channel-title-group">
-      <p class="channel-breadcrumb">{{ teamName || 'Team' }} / {{ channelName || ('Channel #' + channelId) }}</p>
-      <h1 class="channel-title">{{ channelName || ('Channel #' + channelId) }}</h1>
+    <div class="channel-title-group min-w-0">
+      <p class="channel-breadcrumb break-word">{{ teamName || 'Team' }} / {{ channelName || ('Channel #' + channelId) }}</p>
+      <h1 class="channel-title break-word">{{ channelName || ('Channel #' + channelId) }}</h1>
     </div>
     <div class="channel-actions">
-      <button type="button" mat-flat-button color="primary" (click)="onStartMeeting()" matTooltip="Start a meeting for this channel">
+      <button type="button" class="btn-primary" (click)="onStartMeeting()" matTooltip="Start a meeting for this channel">
         <i class="pi pi-video" aria-hidden="true"></i>
         Start meeting
       </button>
     </div>
   </header>
 
-  <main class="channel-body">
-    <section class="channel-masthead">
-      <p class="channel-label">Chat view</p>
-      <p class="channel-copy">
-        This is the channel chat page for <strong>{{ channelName || ('#' + channelId) }}</strong> in <strong>{{ teamName || 'this team' }}</strong>.
-      </p>
-    </section>
+  <!-- Chat card -->
+  <section class="chat-card">
 
-    <section class="chat-window">
-      <div *ngIf="messages.length > 0" class="chat-messages">
-        <div *ngFor="let message of messages" class="chat-message">
-          <div class="chat-message__header">
-            <span class="chat-author">{{ message.author }}</span>
-            <span class="chat-time">{{ message.time }}</span>
-          </div>
-          <p class="chat-text">{{ message.text }}</p>
+    <!-- Messages -->
+    <div
+      #messagesArea
+      class="chat-messages"
+      role="log"
+      aria-live="polite"
+      aria-atomic="false"
+      (scroll)="onMessagesScroll()">
+
+      @if (messages.length === 0) {
+        <div class="chat-empty">
+          <span class="chat-empty__icon" aria-hidden="true"><i class="pi pi-comments"></i></span>
+          <h2 class="chat-empty__title">No messages yet</h2>
+          <p class="chat-empty__sub">Start the conversation by sending a message below.</p>
         </div>
-      </div>
+      } @else {
+        @for (group of groups; track group.dateLabel) {
+          <div class="date-sep" role="separator" [attr.aria-label]="group.dateLabel">
+            <span class="date-sep__pill">{{ group.dateLabel }}</span>
+          </div>
 
-      <div *ngIf="messages.length === 0" class="chat-empty">
-        <p>No messages yet. Start the conversation below.</p>
-      </div>
+          @for (m of group.messages; track m.id; let i = $index) {
+            <div
+              class="msg-row"
+              [class.msg-row--own]="m.isOwn"
+              [class.msg-row--grouped]="!startsAuthorGroup(group.messages, i)"
+              [class.msg-row--tail]="endsAuthorGroup(group.messages, i)"
+              [attr.aria-label]="ariaForMessage(m)">
 
-      <form class="chat-input-row" (ngSubmit)="onSendMessage()">
-        <mat-form-field appearance="fill" class="chat-field">
-          <textarea
-            matInput
-            rows="2"
-            name="messageText"
-            [(ngModel)]="messageText"
-            placeholder="Write a message..."
-          ></textarea>
-        </mat-form-field>
-        <button mat-flat-button color="primary" type="submit" [disabled]="!messageText.trim()">
-          Send
-        </button>
-      </form>
-    </section>
-  </main>
+              @if (!m.isOwn) {
+                <div class="msg-avatar" aria-hidden="true">
+                  @if (startsAuthorGroup(group.messages, i)) { {{ m.authorInitials }} }
+                </div>
+              }
+
+              <div class="msg-content">
+                @if (startsAuthorGroup(group.messages, i)) {
+                  <div class="msg-meta">
+                    <span class="msg-author">{{ m.isOwn ? 'You' : m.authorName }}</span>
+                    <span class="msg-time">{{ timeLabelFor(m.sentAt) }}</span>
+                  </div>
+                }
+                <div class="msg-bubble">{{ m.text }}</div>
+              </div>
+
+              @if (m.isOwn) {
+                <div class="msg-avatar msg-avatar--own" aria-hidden="true">
+                  @if (startsAuthorGroup(group.messages, i)) { {{ m.authorInitials }} }
+                </div>
+              }
+            </div>
+          }
+        }
+      }
+    </div>
+
+    <!-- New-messages pill -->
+    @if (showNewPill) {
+      <button type="button" class="new-pill" (click)="scrollToLatest()">
+        New messages <i class="pi pi-arrow-down" aria-hidden="true"></i>
+      </button>
+    }
+
+    <!-- Composer -->
+    <form class="chat-composer" (ngSubmit)="onSendMessage()">
+      <button
+        type="button"
+        class="composer-attach"
+        disabled
+        aria-disabled="true"
+        aria-label="Attach file"
+        matTooltip="Attach file">
+        <i class="pi pi-paperclip" aria-hidden="true"></i>
+      </button>
+
+      <textarea
+        class="composer-input"
+        name="messageText"
+        [(ngModel)]="messageText"
+        cdkTextareaAutosize
+        cdkAutosizeMinRows="1"
+        cdkAutosizeMaxRows="4"
+        placeholder="Write a message…"
+        aria-label="Message"
+        aria-describedby="composer-hint"
+        (keydown)="onComposerKeydown($event)"></textarea>
+      <span id="composer-hint" class="sr-only">Press Enter to send, Shift+Enter for new line</span>
+
+      <button
+        type="submit"
+        class="composer-send"
+        [disabled]="!messageText.trim() || sending"
+        aria-label="Send message"
+        matTooltip="Send (Enter)">
+        @if (sending) {
+          <mat-spinner diameter="16" />
+        } @else {
+          <i class="pi pi-send" aria-hidden="true"></i>
+        }
+      </button>
+    </form>
+
+  </section>
+
 </div>

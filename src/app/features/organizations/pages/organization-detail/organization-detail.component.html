@@ -1,20 +1,20 @@
-<p-toast position="top-right" />
-<p-confirmdialog />
-
 <div class="detail-container">
 
   <!-- Back -->
-  <p-button
-    label="Organizations"
-    icon="pi pi-arrow-left"
-    [text]="true"
-    severity="secondary"
-    class="back-btn"
-    (onClick)="goBack()" />
+  <button type="button" mat-button class="back-btn" (click)="goBack()">
+    <i class="pi pi-arrow-left" aria-hidden="true"></i>
+    {{ isSystemAdmin() ? 'Organizations' : 'Back to Home' }}
+  </button>
 
-  <!-- Org info card -->
-  <ng-container *ngIf="!loadingOrg(); else orgSpinner">
-    <div class="org-card" *ngIf="organization() as org">
+  <!-- Org info card: skeleton avatar + 2 bars while loading -->
+  @if (loadingOrg()) {
+    <div class="org-card" aria-busy="true" aria-label="Loading organization">
+      <app-skeleton [avatar]="true" [lines]="2" />
+    </div>
+  }
+
+  @if (!loadingOrg() && organization(); as org) {
+    <div class="org-card animate-header">
 
       <div class="org-card-header">
         <div class="org-avatar">{{ org.name.charAt(0).toUpperCase() }}</div>
@@ -22,40 +22,38 @@
         <div class="org-meta">
           <h1 class="org-name">{{ org.name }}</h1>
           <div class="org-badges">
-            <p-tag
-              [value]="org.active ? 'Active' : 'Inactive'"
-              [severity]="org.active ? 'success' : 'danger'"
-              [rounded]="true" />
-            <p-tag
-              [value]="org.tier"
-              severity="info"
-              [rounded]="true" />
+            <span [class]="'badge ' + (org.active ? 'badge--success' : 'badge--danger')">
+              {{ org.active ? 'Active' : 'Inactive' }}
+            </span>
+            @if (org.tier) {
+              <span class="badge badge--info">{{ org.tier }}</span>
+            }
           </div>
         </div>
 
-        <div class="org-actions" *ngIf="isOrgAdmin()">
-          <p-button
-            label="Edit"
-            icon="pi pi-pencil"
-            [outlined]="true"
-            severity="secondary"
-            (onClick)="openEditDialog()" />
-          <p-button
-            [label]="org.active ? 'Deactivate' : 'Activate'"
-            [icon]="org.active ? 'pi pi-pause' : 'pi pi-play'"
-            [outlined]="true"
-            severity="secondary"
-            (onClick)="toggleActivation()" />
-        </div>
+        @if (isOrgAdmin()) {
+          <div class="org-actions">
+            <button type="button" mat-stroked-button (click)="openEditDialog()">
+              <i class="pi pi-pencil" aria-hidden="true"></i>
+              Edit
+            </button>
+            <button type="button" mat-stroked-button (click)="toggleActivation()">
+              <i [class]="'pi ' + (org.active ? 'pi-pause' : 'pi-play')" aria-hidden="true"></i>
+              {{ org.active ? 'Deactivate' : 'Activate' }}
+            </button>
+          </div>
+        }
       </div>
 
-      <p-divider />
+      <mat-divider />
 
       <div class="org-details">
-        <div class="detail-row" *ngIf="org.description">
-          <span class="detail-label">Description</span>
-          <span class="detail-value">{{ org.description }}</span>
-        </div>
+        @if (org.description) {
+          <div class="detail-row">
+            <span class="detail-label">Description</span>
+            <span class="detail-value">{{ org.description }}</span>
+          </div>
+        }
         <div class="detail-row">
           <span class="detail-label">Members</span>
           <span class="detail-value">{{ org.memberCount }}</span>
@@ -72,125 +70,134 @@
 
       <app-form-error [message]="errorOrg()" />
     </div>
-  </ng-container>
+  }
 
-  <ng-template #orgSpinner>
-    <div class="loading-wrap"><p-progressspinner strokeWidth="4" /></div>
-  </ng-template>
+  @if (!loadingOrg() && !organization() && errorOrg()) {
+    <div class="error-state">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+      <p>{{ errorOrg() }}</p>
+      <button type="button" mat-stroked-button (click)="loadOrganization()">Retry</button>
+    </div>
+  }
 
   <!-- Members section -->
-  <div class="members-section">
+  <div class="members-section animate-card">
 
     <div class="members-header">
       <h2 class="section-title">Members</h2>
 
       <div class="members-toolbar">
         <!-- Role filter -->
-        <p-select
-          [options]="roleFilterOptions"
-          optionLabel="label"
-          optionValue="value"
-          [ngModel]="roleFilter()"
-          (ngModelChange)="onRoleFilterChange($event)"
-          placeholder="All roles"
-          styleClass="role-filter" />
+        <mat-form-field appearance="outline" class="role-filter" subscriptSizing="dynamic">
+          <mat-label>Role</mat-label>
+          <mat-select
+            [ngModel]="roleFilter()"
+            (ngModelChange)="onRoleFilterChange($event)">
+            @for (opt of roleFilterOptions; track opt.label) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
         <!-- Add member -->
-        <p-button
-          *ngIf="isOrgAdmin()"
-          label="Add Member"
-          icon="pi pi-user-plus"
-          (onClick)="openAddMemberDialog()" />
+        @if (isOrgAdmin()) {
+          <button type="button" mat-flat-button color="primary" (click)="openAddMemberDialog()">
+            <i class="pi pi-user-plus" aria-hidden="true"></i>
+            Add Member
+          </button>
+        }
 
         <!-- Leave -->
-        <p-button
-          *ngIf="canLeave()"
-          label="Leave"
-          icon="pi pi-sign-out"
-          [outlined]="true"
-          severity="warn"
-          (onClick)="leaveOrganization()" />
+        @if (canLeave()) {
+          <button type="button" mat-stroked-button color="warn" (click)="leaveOrganization()">
+            <i class="pi pi-sign-out" aria-hidden="true"></i>
+            Leave
+          </button>
+        }
       </div>
     </div>
 
     <app-form-error [message]="errorMembers()" />
 
-    <div class="loading-wrap" *ngIf="loadingMembers()">
-      <p-progressspinner strokeWidth="4" />
-    </div>
+    @if (loadingMembers()) {
+      <div aria-busy="true" aria-label="Loading members">
+        @for (i of [1, 2, 3]; track i) {
+          <app-skeleton [avatar]="true" [lines]="2" />
+        }
+      </div>
+    }
 
-    <div *ngIf="!loadingMembers()">
-      <p-table
-        [value]="members()"
-        [rowHover]="true"
-        styleClass="p-datatable-sm">
+    @if (!loadingMembers() && members().length === 0 && !errorMembers()) {
+      <div class="empty-state">
+        <i class="pi pi-users empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__text">No members found.</p>
+      </div>
+    }
 
-        <ng-template pTemplate="header">
+    @if (!loadingMembers() && members().length > 0) {
+      <table class="data-table">
+        <thead>
           <tr>
-            <th>Member</th>
-            <th>Role</th>
-            <th>Joined</th>
-            <th style="width: 6rem"></th>
+            <th scope="col">Member</th>
+            <th scope="col">Role</th>
+            <th scope="col">Joined</th>
+            <th scope="col" class="actions-col"><span class="sr-only">Actions</span></th>
           </tr>
-        </ng-template>
-
-        <ng-template pTemplate="body" let-m>
-          <tr>
-            <td>
-              <div class="member-cell">
-                <div class="member-avatar">{{ m.fullName.charAt(0).toUpperCase() }}</div>
-                <div>
-                  <div class="member-name">{{ m.fullName }}</div>
-                  <div class="member-email">{{ m.email }}</div>
+        </thead>
+        <tbody>
+          @for (m of members(); track m.userId) {
+            <tr class="animate-row">
+              <td>
+                <div class="member-cell">
+                  <div class="member-avatar">{{ m.fullName.charAt(0).toUpperCase() }}</div>
+                  <div>
+                    <div class="member-name">{{ m.fullName }}</div>
+                    <div class="member-email">{{ m.email }}</div>
+                  </div>
                 </div>
-              </div>
-            </td>
-            <td>
-              <p-tag
-                [value]="m.role | orgRoleLabel"
-                [severity]="roleSeverity(m.role)"
-                [rounded]="true" />
-            </td>
-            <td class="joined-cell">{{ m.joinedAt | date:'mediumDate' }}</td>
-            <td class="actions-cell">
-              <ng-container *ngIf="isOrgAdmin() && m.userId !== currentUserId()">
-                <p-button
-                  icon="pi pi-user-edit"
-                  [text]="true"
-                  severity="secondary"
-                  pTooltip="Change role"
-                  tooltipPosition="top"
-                  (onClick)="openChangeRoleDialog(m)" />
-                <p-button
-                  icon="pi pi-user-minus"
-                  [text]="true"
-                  severity="danger"
-                  pTooltip="Remove member"
-                  tooltipPosition="top"
-                  (onClick)="confirmRemoveMember(m)" />
-              </ng-container>
-            </td>
-          </tr>
-        </ng-template>
+              </td>
+              <td>
+                <span [class]="'badge badge--' + roleSeverity(m.role)">
+                  {{ m.role | orgRoleLabel }}
+                </span>
+              </td>
+              <td class="joined-cell">{{ m.joinedAt | date:'mediumDate' }}</td>
+              <td class="actions-cell">
+                @if (isOrgAdmin() && m.userId !== currentUserId()) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    aria-label="Change role"
+                    matTooltip="Change role"
+                    matTooltipPosition="above"
+                    (click)="openChangeRoleDialog(m)">
+                    <i class="pi pi-user-edit" aria-hidden="true"></i>
+                  </button>
+                  <button
+                    type="button"
+                    mat-icon-button
+                    class="btn-danger"
+                    aria-label="Remove member"
+                    matTooltip="Remove member"
+                    matTooltipPosition="above"
+                    (click)="confirmRemoveMember(m)">
+                    <i class="pi pi-user-minus" aria-hidden="true"></i>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
 
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="4" class="no-data">No members found.</td>
-          </tr>
-        </ng-template>
-
-      </p-table>
-
-      <p-paginator
-        *ngIf="membersTotal() > 0"
-        [rows]="membersPageSize()"
-        [totalRecords]="membersTotal()"
-        [first]="membersPage() * membersPageSize()"
-        [rowsPerPageOptions]="[5, 10, 25]"
-        [showCurrentPageReport]="true"
-        currentPageReportTemplate="{first}–{last} of {totalRecords}"
-        (onPageChange)="onMembersPageChange($event)" />
-    </div>
+      <mat-paginator
+        [length]="membersTotal()"
+        [pageSize]="membersPageSize()"
+        [pageIndex]="membersPage()"
+        [pageSizeOptions]="[5, 10, 25]"
+        [showFirstLastButtons]="true"
+        (page)="onMembersPageChange($event)" />
+    }
 
   </div>
 

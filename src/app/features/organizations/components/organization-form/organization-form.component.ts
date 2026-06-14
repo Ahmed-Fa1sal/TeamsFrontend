@@ -5,14 +5,13 @@ import {
   inject,
   signal
 } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
-import { SelectModule } from 'primeng/select';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { FormErrorComponent } from '@shared/components/form-error/form-error.component';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import {
   CreateOrganizationRequest,
   OrganizationResponse,
@@ -37,23 +36,22 @@ const TIER_OPTIONS = [
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    CommonModule,
     ReactiveFormsModule,
-    ButtonModule,
-    InputTextModule,
-    TextareaModule,
-    SelectModule,
-    ProgressSpinnerModule,
-    FormErrorComponent
+    MatDialogModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
   ],
   templateUrl: './organization-form.component.html',
   styleUrls: ['./organization-form.component.css']
 })
 export class OrganizationFormComponent {
-  private readonly ref = inject(DynamicDialogRef);
-  private readonly config = inject(DynamicDialogConfig);
+  private readonly dialogRef = inject(MatDialogRef<OrganizationFormComponent>);
+  readonly dialogData: OrgFormDialogData = inject(MAT_DIALOG_DATA);
   private readonly fb = inject(FormBuilder);
 
-  readonly dialogData: OrgFormDialogData = this.config.data;
   readonly submitting = signal(false);
   readonly isEdit = computed(() => this.dialogData.mode === 'edit');
   readonly tierOptions = TIER_OPTIONS;
@@ -89,15 +87,15 @@ export class OrganizationFormComponent {
       return;
     }
     const { name, description, logoUrl, tier } = this.form.getRawValue();
-    this.ref.close({
+    this.dialogRef.close({
       name: name!,
       description: description || undefined,
       logoUrl: logoUrl || undefined,
       tier: tier!
-    } as OrgFormResult);
+    });
   }
 
   cancel(): void {
-    this.ref.close(null);
+    this.dialogRef.close(null);
   }
 }

@@ -1,45 +1,133 @@
-<div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
-    <h2 style="color: #333;">Video Call</h2>
-    <p *ngIf="targetUserId && !incomingCall" style="margin: 0; color: #555;">Ready to call <strong>{{ targetUserName || ('user #' + targetUserId) }}</strong>.</p>
-    <p *ngIf="incomingCall" style="margin: 0; color: #d32f2f;">Incoming call from <strong>{{ incomingCallerId }}</strong>.</p>
-    <p *ngIf="callInProgress" style="margin: 0; color: #388e3c;">Call in progress</p>
-  
-    <!-- Local video container with label -->
-    <div style="position: relative; max-width: 320px; width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
-      <label style="position: absolute; top: 8px; left: 8px; color: #fff; background-color: rgba(0, 0, 0, 0.7); padding: 4px 12px; border-radius: 4px; font-size: 14px;">
-        Local Video
-      </label>
-      <video id="localVideo" autoplay playsinline muted style="width: 100%; height: auto;"></video>
-    </div>
-  
-    <!-- Remote video container with conditional label -->
-    <div style="position: relative; max-width: 320px; width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
-      <!-- Only show label when remote stream is available -->
-      <label *ngIf="callInProgress" style="position: absolute; top: 8px; left: 8px; color: #fff; background-color: rgba(0, 0, 0, 0.7); padding: 4px 12px; border-radius: 4px; font-size: 14px;">
-        Remote Video
-      </label>
-      <video id="remoteVideo" autoplay playsinline style="width: 100%; height: auto;"></video>
-    </div>
-  
-    <!-- Control buttons -->
-    <div style="display: flex; gap: 10px;">
-      <!-- Start/Stop Call button -->
-      <button *ngIf="!callInProgress && !incomingCall" (click)="startCall()" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: background-color 0.3s;">
-        Start Call
-      </button>
-      <button *ngIf="callInProgress" (click)="stopCall()" style="padding: 10px 20px; background-color: #FF5252; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: background-color 0.3s;">
-        Stop Call
-      </button>
-  
-      <!-- Incoming call control buttons -->
-      <div *ngIf="incomingCall" style="display: flex; gap: 10px;">
-        <button (click)="acceptCall()" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: background-color 0.3s;">
-          Accept
-        </button>
-        <button (click)="rejectCall()" style="padding: 10px 20px; background-color: #FF5252; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: background-color 0.3s;">
-          Reject
-        </button>
+<div class="call-stage">
+
+  <!-- Header overlay: callee + state + duration -->
+  <header class="call-header">
+    <h1 class="call-name">{{ displayName }}</h1>
+    <p class="call-state" [class.call-state--live]="callState === 'connected'">
+      {{ stateLabel }}
+      <span *ngIf="callState === 'connected'" class="call-duration">· {{ callDuration }}</span>
+    </p>
+  </header>
+
+  <!-- Media-permission error -->
+  <div *ngIf="mediaError" class="call-error" role="alert">
+    <i class="pi pi-video call-error__icon" aria-hidden="true"></i>
+    <p class="call-error__title">Camera and microphone unavailable</p>
+    <p class="call-error__msg">Allow access in your browser, then try again.</p>
+    <button type="button" class="btn-primary" (click)="retryMedia()">
+      <i class="pi pi-refresh" aria-hidden="true"></i>
+      Retry
+    </button>
+  </div>
+
+  <!-- Stage -->
+  <main class="call-main" [class.call-main--hidden]="mediaError">
+
+    <div class="remote-tile">
+      <video #remoteVideo autoplay playsinline class="remote-video"></video>
+
+      <!-- Placeholder until the remote stream attaches -->
+      <div *ngIf="!hasRemoteStream" class="remote-placeholder" aria-hidden="true">
+        <div class="remote-placeholder__avatar">
+          <i class="pi pi-user"></i>
+        </div>
+        <p class="remote-placeholder__text">
+          {{ callState === 'calling' ? 'Waiting for ' + displayName + '…' : displayName }}
+        </p>
+      </div>
+
+      <!-- Local PiP -->
+      <div class="local-pip">
+        <video #localVideo autoplay playsinline muted class="local-video"></video>
       </div>
     </div>
-  </div>
-  
+
+  </main>
+
+  <!-- Control bar -->
+  <footer class="call-controls" *ngIf="!mediaError">
+    <div class="controls-pill">
+
+      <!-- Mic toggle -->
+      <button
+        type="button"
+        class="ctl-btn"
+        [class.ctl-btn--off]="!micEnabled"
+        [attr.aria-pressed]="!micEnabled"
+        [attr.aria-label]="micEnabled ? 'Mute microphone' : 'Unmute microphone'"
+        [title]="micEnabled ? 'Mute' : 'Unmute'"
+        [matTooltip]="micEnabled ? 'Mute' : 'Unmute'"
+        (click)="toggleMic()">
+        <i class="pi" [class.pi-microphone]="micEnabled" [class.pi-volume-off]="!micEnabled" aria-hidden="true"></i>
+      </button>
+
+      <!-- Camera toggle -->
+      <button
+        type="button"
+        class="ctl-btn"
+        [class.ctl-btn--off]="!camEnabled"
+        [attr.aria-pressed]="!camEnabled"
+        [attr.aria-label]="camEnabled ? 'Turn camera off' : 'Turn camera on'"
+        [title]="camEnabled ? 'Camera off' : 'Camera on'"
+        [matTooltip]="camEnabled ? 'Camera off' : 'Camera on'"
+        (click)="toggleCam()">
+        <i class="pi" [class.pi-video]="camEnabled" [class.pi-eye-slash]="!camEnabled" aria-hidden="true"></i>
+      </button>
+
+      <!-- Start call (idle with a target) -->
+      <button
+        *ngIf="callState === 'ready' && targetUserId"
+        type="button"
+        class="ctl-btn ctl-btn--start"
+        aria-label="Start call"
+        matTooltip="Start call"
+        (click)="startCall()">
+        <i class="pi pi-phone" aria-hidden="true"></i>
+      </button>
+
+      <!-- Accept / reject (incoming) -->
+      <ng-container *ngIf="callState === 'incoming'">
+        <button
+          type="button"
+          class="ctl-btn ctl-btn--start"
+          aria-label="Accept call"
+          matTooltip="Accept"
+          (click)="acceptCall()">
+          <i class="pi pi-phone" aria-hidden="true"></i>
+        </button>
+        <button
+          type="button"
+          class="ctl-btn ctl-btn--end"
+          aria-label="Reject call"
+          matTooltip="Reject"
+          (click)="rejectCall()">
+          <i class="pi pi-phone ctl-icon--hangup" aria-hidden="true"></i>
+        </button>
+      </ng-container>
+
+      <!-- End call (active) -->
+      <button
+        *ngIf="callState === 'calling' || callState === 'connected'"
+        type="button"
+        class="ctl-btn ctl-btn--end"
+        aria-label="End call"
+        matTooltip="End call"
+        (click)="endCall()">
+        <i class="pi pi-phone ctl-icon--hangup" aria-hidden="true"></i>
+      </button>
+
+      <!-- Back (idle only) -->
+      <button
+        *ngIf="callState === 'ready' || callState === 'ended'"
+        type="button"
+        class="ctl-btn"
+        aria-label="Go back"
+        matTooltip="Back"
+        (click)="goBack()">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+      </button>
+
+    </div>
+  </footer>
+
+</div>

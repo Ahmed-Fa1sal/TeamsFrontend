@@ -13,77 +13,83 @@ export const APP_ROUTES: Routes = [
     path: 'login',
     loadComponent: () =>
       import('@features/auth/login/login.component').then(m => m.LoginComponent),
+    data: { animation: 'Login' }
   },
   {
     path: 'register',
     loadComponent: () =>
       import('@features/auth/register/register.component').then(m => m.RegisterComponent),
+    data: { animation: 'Register' }
   },
   {
     path: 'home',
     loadComponent: () =>
       import('@features/home/home.component').then(m => m.HomeComponent),
     canActivate: [authGuardFn],
+    data: { animation: 'Home' }
   },
   {
     path: 'dashboard',
     loadComponent: () =>
       import('@features/dashboard/dashboard.component').then(m => m.DashboardComponent),
     canActivate: [authGuardFn],
+    data: { animation: 'Dashboard' }
   },
   {
     path: 'profile',
     loadComponent: () =>
       import('@features/profile/profile.component').then(m => m.ProfileComponent),
     canActivate: [authGuardFn],
+    data: { animation: 'Profile' }
   },
   {
     path: 'teams/new',
     loadComponent: () =>
       import('@features/teams/pages/create-team/create-team.component').then(m => m.CreateTeamComponent),
     canActivate: [authGuardFn],
+    data: { animation: 'CreateTeam' }
   },
   {
     path: 'teams/:id',
     loadComponent: () =>
       import('@features/teams/pages/team-detail/team-detail.component').then(m => m.TeamDetailComponent),
     canActivate: [authGuardFn],
+    data: { animation: 'TeamDetail' }
   },
   {
     path: 'channels/:id',
     loadComponent: () =>
       import('@features/channels/channel-chat/channel-chat.component').then(m => m.ChannelChatComponent),
     canActivate: [authGuardFn],
+    data: { animation: 'ChannelChat' }
   },
   {
     path: 'videocall',
     loadComponent: () =>
       import('@app/videocall/videocall.component').then(m => m.VideocallComponent),
     canActivate: [authGuardFn],
+    data: { animation: 'Videocall' }
   },
   {
-    // Only SYSTEM_ADMIN may see the full list of all organizations
     path: 'organizations',
     loadComponent: () =>
       import('@features/organizations/pages/organization-list/organization-list.component')
         .then(m => m.OrganizationListComponent),
     canActivate: [systemAdminGuard],
+    data: { animation: 'Organizations' }
   },
   {
-    // SYSTEM_ADMIN → any org; authenticated member → only their own org
     path: 'organizations/:id',
     loadComponent: () =>
       import('@features/organizations/pages/organization-detail/organization-detail.component')
         .then(m => m.OrganizationDetailComponent),
     canActivate: [orgAccessGuard],
+    data: { animation: 'OrgDetail' }
   },
-  // Example: future admin-only pages use systemAdminGuard
-  // { path: 'admin', ..., canActivate: [systemAdminGuard] },
   {
     path: '**',
     redirectTo: 'login',
   },
 ];
 
-// Re-export for use in other guards/tests
 export { systemAdminGuard };

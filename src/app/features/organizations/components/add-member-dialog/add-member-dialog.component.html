@@ -1,42 +1,39 @@
-<form [formGroup]="form" class="add-member-form">
+<h2 mat-dialog-title>Add Member</h2>
 
-  <div class="field">
-    <label for="member-userid" class="field-label">User ID <span class="required">*</span></label>
-    <input
-      pInputText
-      id="member-userid"
-      formControlName="userId"
-      placeholder="Enter the user's ID"
-      class="w-full"
-      autocomplete="off" />
-    <app-form-error [message]="getError('userId')" />
-  </div>
+<mat-dialog-content>
+  <form [formGroup]="form" class="add-member-form">
 
-  <div class="field">
-    <label for="member-role" class="field-label">Role <span class="required">*</span></label>
-    <p-select
-      inputId="member-role"
-      [options]="roleOptions"
-      optionLabel="label"
-      optionValue="value"
-      formControlName="role"
-      placeholder="Select a role"
-      class="w-full" />
-    <app-form-error [message]="getError('role')" />
-  </div>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>User ID</mat-label>
+      <input matInput formControlName="userId" placeholder="Enter the user's ID" autocomplete="off" />
+      @if (getError('userId')) {
+        <mat-error>{{ getError('userId') }}</mat-error>
+      }
+    </mat-form-field>
 
-  <div class="form-actions">
-    <p-button
-      label="Cancel"
-      [text]="true"
-      severity="secondary"
-      (onClick)="cancel()"
-      [disabled]="submitting()" />
-    <p-button
-      label="Add Member"
-      [icon]="submitting() ? 'pi pi-spin pi-spinner' : 'pi pi-user-plus'"
-      (onClick)="submit()"
-      [disabled]="submitting()" />
-  </div>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Role</mat-label>
+      <mat-select formControlName="role">
+        @for (opt of roleOptions; track opt.value) {
+          <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+        }
+      </mat-select>
+      @if (getError('role')) {
+        <mat-error>{{ getError('role') }}</mat-error>
+      }
+    </mat-form-field>
 
-</form>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" mat-button (click)="cancel()" [disabled]="submitting()">Cancel</button>
+  <button type="button" mat-flat-button color="primary" (click)="submit()" [disabled]="submitting()">
+    @if (submitting()) {
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+    } @else {
+      <i class="pi pi-user-plus" aria-hidden="true"></i>
+    }
+    Add Member
+  </button>
+</mat-dialog-actions>

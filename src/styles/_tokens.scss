@@ -1,0 +1,42 @@
+/* ════════════════════════════════════════════════════════
+   Design tokens — single source of truth.
+   Reference these via var(--…) everywhere; no hardcoded hex
+   in component styles.
+   ════════════════════════════════════════════════════════ */
+
+:root {
+  /* Brand */
+  --primary: #4F52B2;
+  --primary-dark: #3D3F8F;
+  --primary-light: #E8E9F8;
+  --accent: #00C896;
+  --danger: #D93B3B;
+  --danger-soft-border: #F3C2C2;
+  --danger-soft-bg: #FDF0F0;
+
+  /* Surfaces & text */
+  --surface: #FFFFFF;
+  --bg: #F5F6FA;
+  --text: #1F2430;
+  --text-secondary: #5C6470;
+  --border: #E1E4EB;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Elevation */
+  --shadow-card: 0 1px 3px rgba(31, 36, 48, .06), 0 4px 16px rgba(31, 36, 48, .06);
+  --shadow-overlay: 0 8px 32px rgba(31, 36, 48, .18);
+
+  /* Status chips */
+  --chip-success-bg: #E6F6EC;
+  --chip-success-text: #1E7F43;
+  --chip-warn-bg: #FEF3C7;
+  --chip-warn-text: #78350F;
+  --chip-info-bg: #DBEAFE;
+  --chip-info-text: #1E3A8A;
+  --chip-neutral-bg: #F3F4F6;
+  --chip-neutral-text: #374151;
+}

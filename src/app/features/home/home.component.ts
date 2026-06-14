@@ -1,6 +1,7 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Component, ElementRef, OnInit, OnDestroy, inject } from '@angular/core';
+import { CommonModule, AsyncPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Router, RouterLink } from '@angular/router';
 import { Subject, forkJoin, of } from 'rxjs';
 import { takeUntil, catchError } from 'rxjs/operators';
 
@@ -12,8 +13,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
-import gsap from 'gsap';
+import { MatBadgeModule } from '@angular/material/badge';
 
 import { AuthService } from '../auth/services/auth.service';
 import { User } from '../auth/models/auth.models';
@@ -23,11 +23,21 @@ import { SystemRole, OrganizationRole } from '@core/auth/roles';
 import { TeamManagementFetcherService } from '../teams/services/team-management-fetcher.service';
 import { OrganizationService } from '../organizations/services/organization.service';
 import { Team as ApiTeam, Channel as ApiChannel } from '../teams/models/team.models';
-import { OrganizationResponse } from '../organizations/models/organization.model';
+import { CreateOrganizationRequest, OrganizationResponse } from '../organizations/models/organization.model';
+import {
+  OrganizationFormComponent,
+  OrgFormDialogData,
+  OrgFormResult,
+} from '../organizations/components/organization-form/organization-form.component';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { NotificationService } from '../notifications/notification.service';
+import { NotificationPanelComponent } from '../notifications/notification-panel/notification-panel.component';
+import { AddUserDialogComponent } from '../admin/add-user-dialog/add-user-dialog.component';
+import { LogoComponent } from '../../shared/components/logo/logo.component';
+import { animatePageEntrance, animateStatCards } from '@core/animations/page-animations';
 
 interface Team {
   id: string;
@@ -54,6 +64,8 @@ interface QuickAction {
   standalone: true,
   imports: [
     CommonModule,
+    AsyncPipe,
+    RouterLink,
     MatButtonModule,
     MatDividerModule,
     MatTooltipModule,
@@ -62,7 +74,10 @@ interface QuickAction {
     MatDialogModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
+    MatBadgeModule,
     HasSystemRoleDirective,
+    NotificationPanelComponent,
+    LogoComponent,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
@@ -73,15 +88,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   isLoggingOut = false;
   loadError = false;
 
-  // Resolved after async org context for non-system-admin users
   isOrgAdmin = false;
 
-  // Dashboard counts
   orgsCount = 0;
   teamsCount = 0;
   channelsCount = 0;
 
-  // Dashboard lists
   orgsList: OrganizationResponse[] = [];
   orgAdminOrg: OrganizationResponse | null = null;
   teams: Team[] = [];
@@ -89,12 +101,14 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private managedOrgId: number | null = null;
   private readonly destroy$ = new Subject<void>();
+  private tl?: ReturnType<typeof animatePageEntrance>;
+
   readonly SystemRole = SystemRole;
+  readonly unreadCount$ = inject(NotificationService).unreadCount$;
 
   readonly comingSoon = [
     { id: 'chat', label: 'Chat', icon: 'pi pi-comments', description: 'Direct and group messaging' },
     { id: 'meetings', label: 'Meetings', icon: 'pi pi-video', description: 'Schedule and join video calls' },
-    { id: 'notifications', label: 'Notifications', icon: 'pi pi-bell', description: 'Smart alerts and reminders' },
   ];
 
   private readonly AVATAR_COLORS = [
@@ -132,6 +146,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     private readonly teamService: TeamManagementFetcherService,
     private readonly orgService: OrganizationService,
     readonly permissions: PermissionService,
+    private readonly notificationService: NotificationService,
+    private readonly el: ElementRef<HTMLElement>
   ) {}
 
   ngOnInit(): void {
@@ -140,6 +156,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     this.currentUser = this.authService.getCurrentUser();
+    // NOTE: startPolling() is NOT called here — AppComponent is the single call site.
 
     if (this.isSystemAdmin) {
       this.loadAdminData();
@@ -149,6 +166,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.tl?.kill();
     this.permissions.clearOrgContext();
     this.destroy$.next();
     this.destroy$.complete();
@@ -231,18 +249,9 @@ export class HomeComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ([orgsPage, teamsPage, channelsPage]) => {
-          if (orgsPage) {
-            this.orgsCount = orgsPage.totalElements;
-            this.orgsList = orgsPage.content;
-          }
-          if (teamsPage) {
-            this.teamsCount = teamsPage.totalElements;
-            this.teams = teamsPage.content.map(t => this.mapApiTeam(t));
-          }
-          if (channelsPage) {
-            this.channelsCount = channelsPage.totalElements;
-            this.channelsList = channelsPage.content;
-          }
+          if (orgsPage) { this.orgsCount = orgsPage.totalElements; this.orgsList = orgsPage.content; }
+          if (teamsPage) { this.teamsCount = teamsPage.totalElements; this.teams = teamsPage.content.map(t => this.mapApiTeam(t)); }
+          if (channelsPage) { this.channelsCount = channelsPage.totalElements; this.channelsList = channelsPage.content; }
           this.finishLoading();
         },
         error: () => { this.finishLoading(); },
@@ -251,9 +260,10 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private finishLoading(): void {
     this.isLoading = false;
+    // Run after Angular has flushed the *ngIf removal (next microtask)
     setTimeout(() => {
-      gsap.from('.welcome', { y: 16, opacity: 0, duration: 0.35, ease: 'power2.out' });
-      gsap.from('.card', { y: 24, opacity: 0, duration: 0.4, stagger: 0.08, ease: 'power2.out' });
+      this.tl = animatePageEntrance(this.el.nativeElement);
+      animateStatCards(this.el.nativeElement);
     }, 0);
   }
 
@@ -317,16 +327,20 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // ── Event handlers ─────────────────────────────────────────────────────────
 
+  onNotifPanelOpen(): void {
+    this.notificationService.markAllAsRead();
+  }
+
   onQuickAction(id: string): void {
     switch (id) {
       case 'create-team':
         this.router.navigate(['/teams/new']);
         break;
       case 'create-org':
-        this.router.navigate(['/organizations']);
+        this.openCreateOrgDialog();
         break;
       case 'add-user':
-        this.snackBar.open('Add User — This feature is coming soon.', 'Dismiss', { duration: 3000 });
+        this.openAddUserDialog();
         break;
       case 'add-member': {
         const orgId = this.managedOrgId ?? this.permissions.managedOrgId;
@@ -340,6 +354,40 @@ export class HomeComponent implements OnInit, OnDestroy {
       default:
         this.snackBar.open('This feature is coming soon.', 'Dismiss', { duration: 3000 });
     }
+  }
+
+  openAddUserDialog(): void {
+    this.dialog.open(AddUserDialogComponent, { width: '520px' });
+  }
+
+  openCreateOrgDialog(): void {
+    const ref = this.dialog.open(OrganizationFormComponent, {
+      width: '480px',
+      maxWidth: '92vw',
+      data: { mode: 'create' } satisfies OrgFormDialogData,
+    });
+
+    ref.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result: OrgFormResult | null) => {
+        if (!result) return;
+        this.orgService.createOrganization(result as CreateOrganizationRequest)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Organization created.', 'Dismiss', { duration: 3000 });
+              if (this.isSystemAdmin) {
+                this.loadAdminData();
+              }
+            },
+            error: (err: HttpErrorResponse) =>
+              this.snackBar.open(
+                err.error?.message ?? 'Failed to create organization.',
+                'Dismiss',
+                { duration: 4000 },
+              ),
+          });
+      });
   }
 
   onTeamOpen(team: Team): void {

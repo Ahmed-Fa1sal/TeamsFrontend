@@ -1,0 +1,41 @@
+<h2 mat-dialog-title>Add member to {{ data.teamName }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="add-member-form">
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>User ID</mat-label>
+      <input matInput formControlName="userId" inputmode="numeric" autocomplete="off"
+             placeholder="Enter the user's ID" />
+      <mat-hint>Search by name/email is coming soon — enter a user ID for now.</mat-hint>
+      @if (getUserIdError()) {
+        <mat-error>{{ getUserIdError() }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Role</mat-label>
+      <mat-select formControlName="role">
+        <mat-option value="MEMBER">Member</mat-option>
+        <mat-option value="ADMIN">Admin</mat-option>
+      </mat-select>
+      <mat-hint>Members can view and chat. Admins can manage the team.</mat-hint>
+    </mat-form-field>
+
+    @if (serverError()) {
+      <p class="form-error" role="alert">{{ serverError() }}</p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" class="btn-text" (click)="cancel()" [disabled]="submitting()">Cancel</button>
+  <button type="button" class="btn-primary" (click)="submit()" [disabled]="form.invalid || submitting()">
+    @if (submitting()) {
+      <mat-spinner diameter="16" />
+    } @else {
+      <i class="pi pi-user-plus" aria-hidden="true"></i>
+    }
+    Add Member
+  </button>
+</mat-dialog-actions>

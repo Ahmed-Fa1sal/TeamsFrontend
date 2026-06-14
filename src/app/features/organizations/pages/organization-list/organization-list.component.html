@@ -1,137 +1,143 @@
-<p-toast position="top-right" />
-<p-confirmdialog />
-
 <div class="org-list-container">
 
-    <!-- Header -->
-    <div class="page-header">
-        <h1 class="page-title">Organizations</h1>
-        <p-button
-                *ngIf="isSystemAdmin()"
-                label="New Organization"
-                icon="pi pi-plus"
-                (onClick)="openCreateDialog()" />
+  <!-- Header -->
+  <div class="page-header animate-header">
+    <div class="page-header-left">
+      <button type="button" mat-button class="back-home-btn" (click)="goHome()">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Back to Home
+      </button>
+      <h1 class="page-title">Organizations</h1>
     </div>
+    @if (isSystemAdmin()) {
+      <button type="button" mat-flat-button color="primary" (click)="openCreateDialog()">
+        <i class="pi pi-plus" aria-hidden="true"></i>
+        New Organization
+      </button>
+    }
+  </div>
 
-    <!-- Toolbar -->
-    <div class="toolbar">
-        <p-iconfield class="search-field">
-            <p-inputicon styleClass="pi pi-search" />
-            <input
-                    pInputText
-                    [formControl]="searchControl"
-                    placeholder="Search organizations…" />
-        </p-iconfield>
+  <!-- Toolbar -->
+  <div class="toolbar animate-card">
+    <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+      <input matInput [formControl]="searchControl" placeholder="Search organizations…" />
+      <span matSuffix><i class="pi pi-search" aria-hidden="true"></i></span>
+    </mat-form-field>
 
-        <div class="admin-toggle" *appHasRole="SystemRole.SYSTEM_ADMIN">
-            <p-toggleswitch
-                    [ngModel]="isAdminView()"
-                    (ngModelChange)="onAdminToggle($event)" />
-            <span class="toggle-label">All Organizations</span>
-        </div>
+    @if (isSystemAdmin()) {
+      <div class="admin-toggle">
+        <mat-slide-toggle
+          [checked]="isAdminView()"
+          (change)="onAdminToggle($event.checked)">
+          All Organizations
+        </mat-slide-toggle>
+      </div>
+    }
+  </div>
+
+  <!-- Error -->
+  <app-form-error [message]="error()" />
+
+  <!-- Loading: 5 shimmer table rows -->
+  @if (loading()) {
+    <div class="table-wrap" aria-busy="true" aria-label="Loading organizations">
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <app-skeleton type="table-row" />
+      }
     </div>
+  }
 
-    <!-- Error -->
-    <app-form-error [message]="error()" />
+  <!-- Empty state -->
+  @if (!loading() && !error() && organizations().length === 0) {
+    <div class="empty-state">
+      <i class="pi pi-building empty-state__icon" aria-hidden="true"></i>
+      <p class="empty-state__text">No organizations found.</p>
+    </div>
+  }
 
-    <!-- Loading -->
-    @if (loading()) {
-        <div class="loading-wrap">
-            <p-progressspinner strokeWidth="4" />
-        </div>
-    }
+  <!-- Table -->
+  @if (!loading() && organizations().length > 0) {
+    <div class="table-wrap animate-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Description</th>
+            <th scope="col">Status</th>
+            <th scope="col">Members</th>
+            <th scope="col" class="actions-col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (org of organizations(); track org.id) {
+            <tr class="animate-row">
+              <td>
+                <a class="org-link" [routerLink]="['/organizations', org.id]">{{ org.name }}</a>
+              </td>
+              <td class="desc-cell">{{ org.description || '—' }}</td>
+              <td>
+                <span [class]="'badge ' + (org.active ? 'badge--success' : 'badge--danger')">
+                  {{ org.active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>{{ org.memberCount }}</td>
+              <td class="actions-cell">
+                <button
+                  type="button"
+                  mat-icon-button
+                  aria-label="View details"
+                  matTooltip="View details"
+                  matTooltipPosition="above"
+                  (click)="viewOrg(org.id)">
+                  <i class="pi pi-eye" aria-hidden="true"></i>
+                </button>
 
-    <!-- Table -->
-    @if (!loading()) {
-        <div class="table-wrap">
-            <p-table
-                    [value]="organizations()"
-                    [tableStyle]="{ 'min-width': '40rem' }"
-                    [rowHover]="true"
-                    styleClass="p-datatable-sm">
+                <ng-container *appHasRole="SystemRole.SYSTEM_ADMIN">
+                  <button
+                    type="button"
+                    mat-icon-button
+                    aria-label="Edit organization"
+                    matTooltip="Edit"
+                    matTooltipPosition="above"
+                    (click)="openEditDialog(org)">
+                    <i class="pi pi-pencil" aria-hidden="true"></i>
+                  </button>
 
-                <ng-template pTemplate="header">
-                    <tr>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Status</th>
-                        <th>Members</th>
-                        <th style="width: 9rem"></th>
-                    </tr>
-                </ng-template>
+                  <button
+                    type="button"
+                    mat-icon-button
+                    [attr.aria-label]="org.active ? 'Deactivate organization' : 'Activate organization'"
+                    [matTooltip]="org.active ? 'Deactivate' : 'Activate'"
+                    matTooltipPosition="above"
+                    (click)="toggleActivation(org)">
+                    <i [class]="'pi ' + (org.active ? 'pi-pause' : 'pi-play')" aria-hidden="true"></i>
+                  </button>
 
-                <ng-template pTemplate="body" let-org>
-                    <tr>
-                        <td>
-                            <a class="org-link" [routerLink]="['/organizations', org.id]">{{ org.name }}</a>
-                        </td>
-                        <td class="desc-cell">{{ org.description || '—' }}</td>
-                        <td>
-                            <p-tag
-                                    [value]="org.active ? 'Active' : 'Inactive'"
-                                    [severity]="org.active ? 'success' : 'danger'"
-                                    [rounded]="true" />
-                        </td>
-                        <td>{{ org.memberCount ?? '—' }}</td>
-                        <td class="actions-cell">
+                  <button
+                    type="button"
+                    mat-icon-button
+                    class="btn-danger"
+                    aria-label="Delete organization"
+                    matTooltip="Delete"
+                    matTooltipPosition="above"
+                    (click)="confirmDelete(org)">
+                    <i class="pi pi-trash" aria-hidden="true"></i>
+                  </button>
+                </ng-container>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
 
-                            <p-button
-                                    icon="pi pi-eye"
-                                    [text]="true"
-                                    severity="secondary"
-                                    pTooltip="View details"
-                                    tooltipPosition="top"
-                                    (onClick)="viewOrg(org.id)" />
-
-                            <ng-container *appHasRole="SystemRole.SYSTEM_ADMIN">
-                                <p-button
-                                        icon="pi pi-pencil"
-                                        [text]="true"
-                                        severity="secondary"
-                                        pTooltip="Edit"
-                                        tooltipPosition="top"
-                                        (onClick)="openEditDialog(org)" />
-
-                                <p-button
-                                        [icon]="org.active ? 'pi pi-pause' : 'pi pi-play'"
-                                        [text]="true"
-                                        severity="secondary"
-                                        [pTooltip]="org.active ? 'Deactivate' : 'Activate'"
-                                        tooltipPosition="top"
-                                        (onClick)="toggleActivation(org)" />
-
-                                <p-button
-                                        icon="pi pi-trash"
-                                        [text]="true"
-                                        severity="danger"
-                                        pTooltip="Delete"
-                                        tooltipPosition="top"
-                                        (onClick)="confirmDelete(org)" />
-                            </ng-container>
-
-                        </td>
-                    </tr>
-                </ng-template>
-
-                <ng-template pTemplate="emptymessage">
-                    <tr>
-                        <td colspan="5" class="no-data">No organizations found.</td>
-                    </tr>
-                </ng-template>
-
-            </p-table>
-
-            @if (total() > 0) {
-                <p-paginator
-                        [rows]="pageSize()"
-                        [totalRecords]="total()"
-                        [first]="page() * pageSize()"
-                        [rowsPerPageOptions]="[5, 10, 25, 50]"
-                        [showCurrentPageReport]="true"
-                        currentPageReportTemplate="{first}–{last} of {totalRecords}"
-                        (onPageChange)="onPageChange($event)" />
-            }
-        </div>
-    }
+      <mat-paginator
+        [length]="total()"
+        [pageSize]="pageSize()"
+        [pageIndex]="page()"
+        [pageSizeOptions]="[5, 10, 25, 50]"
+        [showFirstLastButtons]="true"
+        (page)="onPageChange($event)" />
+    </div>
+  }
 
 </div>

@@ -1,0 +1,106 @@
+/* ════════════════════════════════════════════════════════
+   Angular Material 19 theme — THE fix for transparent
+   overlay panels, unstyled dialogs, and raw-looking buttons.
+   Loaded once via angular.json "styles".
+   ════════════════════════════════════════════════════════ */
+@use '@angular/material' as mat;
+
+@use 'tokens';
+@use 'buttons';
+
+html {
+  color-scheme: light;
+
+  @include mat.theme((
+    color: (
+      primary: mat.$violet-palette,
+      theme-type: light,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+
+  /* Re-point Material system colors at brand tokens so
+     mat-flat-button, slide-toggle, badge etc. match the app */
+  --mat-sys-primary: #4F52B2;
+  --mat-sys-on-primary: #FFFFFF;
+  --mat-sys-primary-container: #E8E9F8;
+  --mat-sys-on-primary-container: #3D3F8F;
+}
+
+/* ════════════════════════════════════════════════════════
+   Overlay polish (dialogs / menus / selects / tooltips)
+   ════════════════════════════════════════════════════════ */
+
+/* Dialogs */
+.mat-mdc-dialog-surface {
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-overlay) !important;
+}
+
+.cdk-overlay-dark-backdrop {
+  background: rgba(31, 36, 48, 0.45);
+}
+
+/* Menus & autocomplete/select panels */
+.mat-mdc-menu-panel,
+.mat-mdc-select-panel,
+.mat-mdc-autocomplete-panel {
+  background: var(--surface) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-overlay) !important;
+}
+
+.mat-mdc-select-panel {
+  max-height: 280px !important;
+}
+
+/* Select / menu option states */
+.mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+  background: var(--primary-light) !important;
+}
+
+.mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) .mdc-list-item__primary-text {
+  color: var(--primary) !important;
+}
+
+/* Profile / notification mat-menu panels need extra width */
+.profile-panel.mat-mdc-menu-panel {
+  min-width: 260px !important;
+  border-radius: var(--radius-md) !important;
+}
+
+.notif-menu-panel.mat-mdc-menu-panel {
+  max-width: calc(100vw - 32px) !important;
+  border-radius: var(--radius-md) !important;
+  overflow-x: hidden;
+}
+
+/* ════════════════════════════════════════════════════════
+   Shared layout primitives (Task 15)
+   ════════════════════════════════════════════════════════ */
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-container--narrow {
+  max-width: 960px;
+}
+
+@media (max-width: 720px) {
+  .page-container,
+  .page-container--narrow {
+    padding: 16px;
+  }
+}
+
+/* Kill horizontal-scroll sources */
+.min-w-0 { min-width: 0; }
+
+.break-word {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

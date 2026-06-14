@@ -4,17 +4,14 @@ import {
   inject,
   signal
 } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { FormErrorComponent } from '@shared/components/form-error/form-error.component';
-import {
-  AddOrganizationMemberRequest,
-  OrganizationMemberRole
-} from '../../models/organization.model';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { OrganizationMemberRole } from '../../models/organization.model';
 import { ROLE_LABELS } from '../../pipes/org-role-label.pipe';
 
 export interface AddMemberDialogData {
@@ -26,24 +23,27 @@ export interface AddMemberDialogData {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    CommonModule,
     ReactiveFormsModule,
-    ButtonModule,
-    InputTextModule,
-    SelectModule,
-    ProgressSpinnerModule,
-    FormErrorComponent
+    MatDialogModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule
   ],
   templateUrl: './add-member-dialog.component.html',
   styleUrls: ['./add-member-dialog.component.css']
 })
 export class AddMemberDialogComponent {
-  private readonly ref = inject(DynamicDialogRef);
-  private readonly config = inject(DynamicDialogConfig);
+  private readonly dialogRef = inject(MatDialogRef<AddMemberDialogComponent>);
+  readonly dialogData: AddMemberDialogData = inject(MAT_DIALOG_DATA);
   private readonly fb = inject(FormBuilder);
 
-  readonly dialogData: AddMemberDialogData = this.config.data;
   readonly submitting = signal(false);
-  readonly roleOptions = Object.values(OrganizationMemberRole).map(r => ({ label: ROLE_LABELS[r], value: r }));
+  readonly roleOptions = Object.values(OrganizationMemberRole).map(r => ({
+    label: ROLE_LABELS[r],
+    value: r
+  }));
 
   readonly form = this.fb.group({
     userId: ['', Validators.required],
@@ -64,10 +64,10 @@ export class AddMemberDialogComponent {
       return;
     }
     const { userId, role } = this.form.getRawValue();
-    this.ref.close({ userId: Number(userId!), role: role! } as AddOrganizationMemberRequest);
+    this.dialogRef.close({ userId: Number(userId!), role: role! });
   }
 
   cancel(): void {
-    this.ref.close(null);
+    this.dialogRef.close(null);
   }
 }

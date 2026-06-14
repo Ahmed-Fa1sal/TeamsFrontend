@@ -13,6 +13,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import gsap from 'gsap';
 
 import { AuthService } from '../services/auth.service';
+import { LogoComponent } from '../../../shared/components/logo/logo.component';
+import { REDUCED_MOTION } from '@core/animations/page-animations';
 
 @Component({
   selector: 'app-login',
@@ -25,6 +27,7 @@ import { AuthService } from '../services/auth.service';
     MatInputModule,
     MatFormFieldModule,
     MatProgressSpinnerModule,
+    LogoComponent,
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
@@ -54,7 +57,9 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    if (REDUCED_MOTION) return;
     gsap.from('.auth-panel', { y: 32, opacity: 0, duration: 0.45, ease: 'power2.out' });
+    gsap.from('.form-logo', { y: -16, opacity: 0, duration: 0.6, ease: 'power2.out', delay: 0.15 });
   }
 
   ngOnDestroy(): void {
