@@ -322,7 +322,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   channelColor(channel: ApiChannel): string {
-    return this.AVATAR_COLORS[channel.teamId % this.AVATAR_COLORS.length];
+    return this.AVATAR_COLORS[(channel.teamId ?? 0) % this.AVATAR_COLORS.length];
   }
 
   // ── Event handlers ─────────────────────────────────────────────────────────
@@ -395,7 +395,24 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   onChannelOpen(channel: ApiChannel): void {
-    this.router.navigate(['/channels', channel.id]);
+    console.log('[onChannelOpen] channel:', channel);
+
+    const channelId = channel.id ?? channel.channelId;
+    const teamId = channel.teamId;
+
+    if (channelId && teamId) {
+      this.router.navigate(['/teams', teamId, 'channels', channelId]);
+    } else {
+      console.error(
+        '[HomeComponent] Cannot determine channel/team ID — check the fields the backend returns:',
+        channel,
+      );
+      this.snackBar.open(
+        'Cannot open channel: server response is missing the channel or team ID. Check the browser console.',
+        'Dismiss',
+        { duration: 5000 },
+      );
+    }
   }
 
   onNavigate(path: string): void {

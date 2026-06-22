@@ -336,6 +336,115 @@
   .composer-send:hover:not(:disabled) { transform: none; }
 }
 
+/* Loading state */
+.chat-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 16px;
+}
+
+.chat-loading__label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Error state */
+.chat-error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.chat-error__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-error__text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 280px;
+}
+
+/* Reply quote */
+.msg-reply-quote {
+  display: flex;
+  flex-direction: column;
+  border-left: 3px solid var(--primary);
+  padding: 4px 10px;
+  margin-bottom: 4px;
+  background: var(--bg);
+  border-radius: 0 6px 6px 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.msg-row--own .msg-reply-quote {
+  border-left-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.msg-reply-quote__author {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msg-row--own .msg-reply-quote__author {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.msg-reply-quote__text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msg-row--own .msg-reply-quote__text {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Message send status */
+.msg-status {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 11px;
+  vertical-align: middle;
+  opacity: 0.65;
+}
+
+.msg-status--failed {
+  color: #dc2626;
+  opacity: 1;
+}
+
+.msg-row--failed .msg-bubble {
+  opacity: 0.75;
+}
+
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 720px) {
   .channel-page { padding: 12px; }

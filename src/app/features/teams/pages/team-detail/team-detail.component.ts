@@ -153,14 +153,86 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
     this.router.navigate(['/home']);
   }
 
-  onChannelOpen(channel: Channel): void {
-    this.router.navigate(['/channels', channel.id], {
-      state: {
-        teamName: this.team?.name,
-        channelName: channel.name,
-      },
-    });
+  onTeamChat(): void {
+    console.log('========== Team Chat ==========');
+    console.log('team:', this.team);
+    console.log('teamId:', this.teamId);
+    console.log('conversationId:', this.team?.conversationId);
+
+    if (!this.team) {
+      console.error('Team is null');
+      return;
+    }
+
+    if (this.team.conversationId) {
+      console.log('Navigating to:', `/chat/conversations/${this.team.conversationId}`);
+
+      this.router.navigate(['/chat/conversations', this.team.conversationId], {
+        state: {
+          type: 'TEAM',
+          teamName: this.team.name,
+        },
+      }).then(result => console.log('Navigation result:', result))
+        .catch(err => console.error('Navigation error:', err));
+
+    } else {
+      console.log('Navigating to:', `/chat/team/${this.teamId}`);
+
+      this.router.navigate(['/chat/team', this.teamId], {
+        state: {
+          type: 'TEAM',
+          teamName: this.team.name,
+        },
+      }).then(result => console.log('Navigation result:', result))
+        .catch(err => console.error('Navigation error:', err));
+    }
   }
+
+  onDirectMessage(member: TeamMember): void {
+    console.log('========== Direct Message ==========');
+    console.log('member:', member);
+
+    const currentUserId = Number(this.authService.getCurrentUser()?.id);
+
+    console.log('Current User:', currentUserId);
+    console.log('Target User:', member.user.id);
+
+    if (member.user.id === currentUserId) {
+      console.warn('Cannot message yourself.');
+      return;
+    }
+
+    console.log('Navigating to:', `/chat/direct/${member.user.id}`);
+
+    this.router.navigate(['/chat/direct', member.user.id], {
+      state: {
+        type: 'DIRECT',
+        partnerName: this.memberDisplayName(member),
+      },
+    }).then(result => console.log('Navigation result:', result))
+      .catch(err => console.error('Navigation error:', err));
+  }
+
+  onChannelOpen(channel: Channel): void {
+    console.log('[onChannelOpen] channel:', channel);
+
+    const channelId = channel.id ?? channel.channelId;
+
+    if (channelId) {
+      this.router.navigate(['/teams', this.teamId, 'channels', channelId]);
+    } else {
+      console.error(
+        '[TeamDetail] Cannot determine channel ID — check the fields the backend returns:',
+        channel,
+      );
+      this.snackBar.open(
+        'Cannot open channel: server response is missing the channel ID. Check the browser console.',
+        'Dismiss',
+        { duration: 5000 },
+      );
+    }
+  }
+
 
   onCallMember(member: TeamMember): void {
     const currentUserId = Number(this.authService.getCurrentUser()?.id);

@@ -62,9 +62,9 @@ export class TeamManagementFetcherService {
       .pipe(map(r => this.unwrapResponse(r)));
   }
 
-  getChannelById(channelId: number): Observable<Channel> {
+  getChannelById(teamId: number, channelId: number): Observable<Channel> {
     return this.http
-      .get<ApiResponse<Channel>>(getApiUrl(`${API_CONFIG.ENDPOINTS.CHANNELS}/${channelId}`))
+      .get<ApiResponse<Channel>>(getApiUrl(`${API_CONFIG.ENDPOINTS.CHANNELS}/${teamId}/${channelId}`))
       .pipe(map(r => this.unwrapResponse(r)));
   }
 

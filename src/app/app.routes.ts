@@ -56,12 +56,42 @@ export const APP_ROUTES: Routes = [
     canActivate: [authGuardFn],
     data: { animation: 'TeamDetail' }
   },
+  // ── Chat routes (all served by ChatPageComponent) ───────────────────────────
   {
-    path: 'channels/:id',
+    path: 'chat/conversations/:conversationId',
     loadComponent: () =>
-      import('@features/channels/channel-chat/channel-chat.component').then(m => m.ChannelChatComponent),
+      import('./features/chat/chat-page.component').then(m => m.ChatPageComponent),
     canActivate: [authGuardFn],
-    data: { animation: 'ChannelChat' }
+    data: { animation: 'Chat' }
+  },
+  {
+    path: 'chat/direct/:userId',
+    loadComponent: () =>
+      import('./features/chat/chat-page.component').then(m => m.ChatPageComponent),
+    canActivate: [authGuardFn],
+    data: { animation: 'Chat' }
+  },
+  {
+    path: 'chat/team/:teamId',
+    loadComponent: () =>
+      import('./features/chat/chat-page.component').then(m => m.ChatPageComponent),
+    canActivate: [authGuardFn],
+    data: { animation: 'Chat' }
+  },
+  {
+    path: 'chat/channel/:channelId',
+    loadComponent: () =>
+      import('./features/chat/chat-page.component').then(m => m.ChatPageComponent),
+    canActivate: [authGuardFn],
+    data: { animation: 'Chat' }
+  },
+  // ── Channel detail ───────────────────────────────────────────────────────────
+  {
+    path: 'teams/:teamId/channels/:channelId',
+    loadComponent: () =>
+      import('@features/channels/channel-detail/channel-detail.component').then(m => m.ChannelDetailComponent),
+    canActivate: [authGuardFn],
+    data: { animation: 'ChannelDetail' }
   },
   {
     path: 'videocall',
