@@ -1,6 +1,6 @@
 <div class="call-stage">
 
-  <!-- Header overlay: callee + state + duration -->
+  <!-- Header -->
   <header class="call-header">
     <h1 class="call-name">{{ displayName }}</h1>
     <p class="call-state" [class.call-state--live]="callState === 'connected'">
@@ -15,68 +15,181 @@
     <p class="call-error__title">Camera and microphone unavailable</p>
     <p class="call-error__msg">Allow access in your browser, then try again.</p>
     <button type="button" class="btn-primary" (click)="retryMedia()">
-      <i class="pi pi-refresh" aria-hidden="true"></i>
-      Retry
+      <i class="pi pi-refresh" aria-hidden="true"></i> Retry
     </button>
   </div>
 
-  <!-- Stage -->
-  <main class="call-main" [class.call-main--hidden]="mediaError">
+  <!-- ── SCREEN-SHARE LAYOUT ────────────────────────────────────────── -->
+  <main class="call-main call-main--sharing" *ngIf="isSharing && !mediaError">
 
-    <div class="remote-tile">
-      <video #remoteVideo autoplay playsinline class="remote-video"></video>
-
-      <!-- Placeholder until the remote stream attaches -->
-      <div *ngIf="!hasRemoteStream" class="remote-placeholder" aria-hidden="true">
-        <div class="remote-placeholder__avatar">
-          <i class="pi pi-user"></i>
+    <!-- Large screen viewport -->
+    <div class="screen-viewport">
+      <!-- My screen -->
+      <ng-container *ngIf="screenSharing">
+        <video #localScreenRef autoplay playsinline muted class="screen-video"></video>
+        <div class="screen-presenter-bar">
+          <i class="pi pi-desktop"></i> You are presenting
         </div>
-        <p class="remote-placeholder__text">
-          {{ callState === 'calling' ? 'Waiting for ' + displayName + '…' : displayName }}
-        </p>
-      </div>
-
-      <!-- Local PiP -->
-      <div class="local-pip">
-        <video #localVideo autoplay playsinline muted class="local-video"></video>
-      </div>
+      </ng-container>
+      <!-- Remote screen -->
+      <ng-container *ngIf="remoteIsSharing && screenParticipant">
+        <video
+          #participantVideo
+          [attr.data-peer-id]="screenParticipant.peerId"
+          autoplay
+          playsinline
+          class="screen-video"
+        ></video>
+        <div class="screen-presenter-bar">
+          <i class="pi pi-desktop"></i> {{ screenParticipant.label }} is presenting
+        </div>
+      </ng-container>
     </div>
 
+    <!-- Participants sidebar strip -->
+    <aside class="participants-sidebar">
+      <!-- Camera tiles (non-sharers) -->
+      <div class="sidebar-tile" *ngFor="let p of cameraParticipants">
+        <ng-container *ngIf="p.hasVideo; else sidebarPlaceholder">
+          <video
+            #participantVideo
+            [attr.data-peer-id]="p.peerId"
+            autoplay
+            playsinline
+            class="sidebar-video"
+          ></video>
+        </ng-container>
+        <ng-template #sidebarPlaceholder>
+          <div class="sidebar-avatar">{{ p.initials }}</div>
+        </ng-template>
+        <span class="sidebar-label">{{ p.label }}</span>
+      </div>
+
+      <!-- Local camera (always visible in sidebar while sharing) -->
+      <div class="sidebar-tile sidebar-tile--local">
+        <video #localVideo autoplay playsinline muted class="sidebar-video"></video>
+        <span class="sidebar-label">You</span>
+      </div>
+    </aside>
   </main>
 
-  <!-- Control bar -->
+  <!-- ── NORMAL LAYOUT ──────────────────────────────────────────────── -->
+  <main class="call-main" [class.call-main--hidden]="mediaError" *ngIf="!isSharing">
+    <div class="participants-grid" [class.grid-large]="remoteParticipants.length >= 4">
+
+      <ng-container *ngIf="remoteParticipants.length > 0; else emptyStage">
+        <section class="participant-card" *ngFor="let p of remoteParticipants">
+          <ng-container *ngIf="p.hasVideo; else placeholder">
+            <video
+              #participantVideo
+              [attr.data-peer-id]="p.peerId"
+              autoplay
+              playsinline
+              class="participant-video"
+            ></video>
+            <div class="participant-meta"><span>{{ p.label }}</span></div>
+          </ng-container>
+          <ng-template #placeholder>
+            <div class="placeholder-avatar">
+              <div class="initials">{{ p.initials }}</div>
+            </div>
+            <div class="participant-name">{{ p.label }}</div>
+          </ng-template>
+        </section>
+      </ng-container>
+
+      <ng-template #emptyStage>
+        <section class="remote-tile">
+          <div class="remote-placeholder">
+            <div class="remote-placeholder__avatar"><i class="pi pi-user"></i></div>
+            <p class="remote-placeholder__text">
+              {{ callState === 'calling' ? 'Waiting for ' + displayName + '…' : displayName }}
+            </p>
+          </div>
+        </section>
+      </ng-template>
+
+      <!-- Local PiP -->
+      <aside class="local-pip">
+        <video #localVideo autoplay playsinline muted class="local-video"></video>
+        <div class="local-label">You</div>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- ── INCOMING CALL MODAL ────────────────────────────────────────── -->
+  <div class="incoming-modal" *ngIf="callState === 'incoming'">
+    <div class="incoming-card">
+      <div class="incoming-avatar">
+        <i class="pi pi-user"></i>
+      </div>
+      <div class="incoming-info">
+        <div class="incoming-name">{{ displayName }}</div>
+        <div class="incoming-sub">Incoming call</div>
+      </div>
+      <div class="incoming-actions">
+        <button class="inc-btn inc-btn--video" (click)="acceptIncoming(true)">
+          <i class="pi pi-video"></i>
+          <span>Video</span>
+        </button>
+        <button class="inc-btn inc-btn--audio" (click)="acceptIncoming(false)">
+          <i class="pi pi-phone"></i>
+          <span>Audio</span>
+        </button>
+        <button class="inc-btn inc-btn--reject" (click)="rejectIncoming()">
+          <i class="pi pi-phone ctl-icon--hangup"></i>
+          <span>Decline</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONTROL BAR ────────────────────────────────────────────────── -->
   <footer class="call-controls" *ngIf="!mediaError">
     <div class="controls-pill">
 
-      <!-- Mic toggle -->
+      <!-- Mic -->
       <button
         type="button"
         class="ctl-btn"
         [class.ctl-btn--off]="!micEnabled"
         [attr.aria-pressed]="!micEnabled"
         [attr.aria-label]="micEnabled ? 'Mute microphone' : 'Unmute microphone'"
-        [title]="micEnabled ? 'Mute' : 'Unmute'"
         [matTooltip]="micEnabled ? 'Mute' : 'Unmute'"
         (click)="toggleMic()">
         <i class="pi" [class.pi-microphone]="micEnabled" [class.pi-volume-off]="!micEnabled" aria-hidden="true"></i>
       </button>
 
-      <!-- Camera toggle -->
+      <!-- Camera -->
       <button
         type="button"
         class="ctl-btn"
         [class.ctl-btn--off]="!camEnabled"
         [attr.aria-pressed]="!camEnabled"
         [attr.aria-label]="camEnabled ? 'Turn camera off' : 'Turn camera on'"
-        [title]="camEnabled ? 'Camera off' : 'Camera on'"
         [matTooltip]="camEnabled ? 'Camera off' : 'Camera on'"
         (click)="toggleCam()">
         <i class="pi" [class.pi-video]="camEnabled" [class.pi-eye-slash]="!camEnabled" aria-hidden="true"></i>
       </button>
 
-      <!-- Start call (idle with a target) -->
+      <!-- Screen share (only while in a call) -->
       <button
-        *ngIf="callState === 'ready' && targetUserId"
+        *ngIf="callState === 'connected' || callState === 'calling'"
+        type="button"
+        class="ctl-btn"
+        [class.ctl-btn--sharing]="screenSharing"
+        [disabled]="remoteIsSharing && !screenSharing"
+        [attr.aria-pressed]="screenSharing"
+        [attr.aria-label]="screenSharing ? 'Stop sharing screen' : 'Share screen'"
+        [matTooltip]="screenSharing ? 'Stop sharing' : remoteIsSharing ? 'Someone is already sharing' : 'Share screen'"
+        (click)="toggleScreenShare()">
+        <i class="pi pi-desktop" aria-hidden="true"></i>
+      </button>
+
+      <!-- Start call -->
+      <button
+        *ngIf="callState === 'ready' && (targetUserId || channelId)"
         type="button"
         class="ctl-btn ctl-btn--start"
         aria-label="Start call"
@@ -85,27 +198,17 @@
         <i class="pi pi-phone" aria-hidden="true"></i>
       </button>
 
-      <!-- Accept / reject (incoming) -->
+      <!-- Accept / Reject (incoming) -->
       <ng-container *ngIf="callState === 'incoming'">
-        <button
-          type="button"
-          class="ctl-btn ctl-btn--start"
-          aria-label="Accept call"
-          matTooltip="Accept"
-          (click)="acceptCall()">
+        <button type="button" class="ctl-btn ctl-btn--start" aria-label="Accept" matTooltip="Accept" (click)="acceptCall()">
           <i class="pi pi-phone" aria-hidden="true"></i>
         </button>
-        <button
-          type="button"
-          class="ctl-btn ctl-btn--end"
-          aria-label="Reject call"
-          matTooltip="Reject"
-          (click)="rejectCall()">
+        <button type="button" class="ctl-btn ctl-btn--end" aria-label="Reject" matTooltip="Reject" (click)="rejectCall()">
           <i class="pi pi-phone ctl-icon--hangup" aria-hidden="true"></i>
         </button>
       </ng-container>
 
-      <!-- End call (active) -->
+      <!-- End call -->
       <button
         *ngIf="callState === 'calling' || callState === 'connected'"
         type="button"
@@ -116,7 +219,7 @@
         <i class="pi pi-phone ctl-icon--hangup" aria-hidden="true"></i>
       </button>
 
-      <!-- Back (idle only) -->
+      <!-- Back -->
       <button
         *ngIf="callState === 'ready' || callState === 'ended'"
         type="button"

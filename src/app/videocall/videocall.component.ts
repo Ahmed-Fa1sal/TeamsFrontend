@@ -1,9 +1,13 @@
 import {
   Component,
   ElementRef,
+  NgZone,
   OnDestroy,
   OnInit,
+  QueryList,
   ViewChild,
+  ViewChildren,
+  AfterViewInit,
   inject
 } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
@@ -24,9 +28,22 @@ type CallState = 'ready' | 'incoming' | 'calling' | 'connected' | 'ended';
   templateUrl: './videocall.component.html',
   styleUrls: ['./videocall.component.css']
 })
-export class VideocallComponent implements OnInit, OnDestroy {
-  @ViewChild('localVideo', { static: true }) private readonly localVideoRef!: ElementRef<HTMLVideoElement>;
-  @ViewChild('remoteVideo', { static: true }) private readonly remoteVideoRef!: ElementRef<HTMLVideoElement>;
+export class VideocallComponent implements OnInit, AfterViewInit, OnDestroy {
+  private _localVideoRef?: ElementRef<HTMLVideoElement>;
+  @ViewChild('localVideo') set localVideoRefSetter(ref: ElementRef<HTMLVideoElement> | undefined) {
+    this._localVideoRef = ref;
+    if (ref && this.localStream) {
+      ref.nativeElement.srcObject = this.localStream;
+    }
+  }
+  get localVideoRef(): ElementRef<HTMLVideoElement> { return this._localVideoRef!; }
+  @ViewChildren('participantVideo') private readonly participantVideoRefs!: QueryList<ElementRef<HTMLVideoElement>>;
+
+  @ViewChild('localScreenRef') set localScreenRefSetter(ref: ElementRef<HTMLVideoElement> | undefined) {
+    if (ref && this.screenStreamForUI) {
+      ref.nativeElement.srcObject = this.screenStreamForUI;
+    }
+  }
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -34,21 +51,42 @@ export class VideocallComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly webrtc = inject(MediaServiceService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly ngZone = inject(NgZone);
 
   callState: CallState = 'ready';
+  currentUserId: string | number | null = null;
   targetUserId: string | null = null;
   targetUserName = '';
+  channelId: string | null = null;
+  channelName = '';
   incomingCallerId: string | null = null;
+  incomingIsChannel = false;
+  remoteParticipants: Array<{ peerId: string; stream: MediaStream; label: string; hasVideo?: boolean; initials?: string }> = [];
 
   micEnabled = true;
   camEnabled = true;
   mediaError = false;
   hasRemoteStream = false;
+  screenSharing = false;
+  remoteIsSharing = false;
+  screenSharerId: string | null = null;
+  private screenStreamForUI: MediaStream | null = null;
+
+  get isSharing() { return this.screenSharing || this.remoteIsSharing; }
+
+  get screenParticipant() {
+    return this.remoteParticipants.find(p => p.peerId === this.screenSharerId) ?? null;
+  }
+
+  get cameraParticipants() {
+    if (!this.remoteIsSharing || !this.screenSharerId) return this.remoteParticipants;
+    return this.remoteParticipants.filter(p => p.peerId !== this.screenSharerId);
+  }
 
   /** mm:ss formatted call duration, shown while connected */
   callDuration = '00:00';
 
-  private localStream: MediaStream | null = null;
+  localStream: MediaStream | null = null;
   private mediaReady = false;
   private durationTimer: ReturnType<typeof setInterval> | null = null;
   private callStartedAt = 0;
@@ -69,6 +107,9 @@ export class VideocallComponent implements OnInit, OnDestroy {
     if (this.callState === 'incoming' && this.incomingCallerId) {
       return `User #${this.incomingCallerId}`;
     }
+    if (this.channelId) {
+      return this.channelName || `Channel #${this.channelId}`;
+    }
     return this.targetUserName || (this.targetUserId ? `user #${this.targetUserId}` : 'Video call');
   }
 
@@ -83,12 +124,18 @@ export class VideocallComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.currentUserId = currentUserId;
     this.webrtc.registerUser(currentUserId);
 
     this.subs.push(
       this.route.queryParamMap.subscribe(params => {
         this.targetUserId = params.get('targetUserId');
         this.targetUserName = params.get('targetUserName') ?? '';
+        this.channelId = params.get('channelId');
+        this.channelName = params.get('channelName') ?? '';
+        if (this.channelId && this.mediaReady && this.callState === 'ready' && !this.targetUserId) {
+          this.startCall();
+        }
         if (this.targetUserId !== null && this.mediaReady && this.callState === 'ready') {
           this.startCall();
         }
@@ -107,25 +154,69 @@ export class VideocallComponent implements OnInit, OnDestroy {
       this.camEnabled = this.localStream.getVideoTracks().some(t => t.enabled);
       this.micEnabled = this.localStream.getAudioTracks().some(t => t.enabled);
 
+      if (this.channelId) {
+        await this.webrtc.joinChannel(this.channelId);
+      }
+
       this.subs.push(
         this.webrtc.incomingCall.subscribe(info => {
-          this.incomingCallerId = info.callerId;
-          this.callState = 'incoming';
+          this.ngZone.run(() => {
+            this.incomingCallerId = info.callerId;
+            this.callState = 'incoming';
+          });
         }),
 
-        this.webrtc.remoteStream.subscribe(stream => {
-          const remote = this.remoteVideoRef.nativeElement;
-          if (stream) {
-            remote.srcObject = stream;
-            this.hasRemoteStream = true;
-            this.setConnected();
-          } else {
-            remote.srcObject = null;
-            this.hasRemoteStream = false;
-          }
+        this.webrtc.incomingChannelCall.subscribe(info => {
+          if (!this.channelId) return;
+          this.ngZone.run(() => {
+            this.incomingCallerId = info.callerId;
+            this.incomingIsChannel = true;
+            this.callState = 'incoming';
+          });
         }),
 
-        this.webrtc.callEnded.subscribe(() => this.onCallTerminated())
+        this.webrtc.remoteStreamsChanged.subscribe(items => {
+          this.ngZone.run(() => {
+            this.remoteParticipants = items.map(item => ({
+              peerId: item.peerId,
+              stream: item.stream,
+              label: item.peerId === this.currentUserId ? 'You' : `User #${item.peerId}`,
+              hasVideo: (item.stream && item.stream.getVideoTracks && item.stream.getVideoTracks().some(t => t.enabled)) || false,
+              initials: this.initialsOf(item.peerId === this.currentUserId ? 'You' : `User ${item.peerId}`),
+            } as any));
+            this.hasRemoteStream = this.remoteParticipants.length > 0;
+            if (this.hasRemoteStream && this.callState !== 'connected') {
+              this.setConnected();
+            }
+            setTimeout(() => this.assignParticipantStreams(), 0);
+          });
+        }),
+
+        this.webrtc.screenShareChanged.subscribe(({ userId, sharing }) => {
+          this.ngZone.run(() => {
+            if (sharing) {
+              this.remoteIsSharing = userId !== String(this.currentUserId);
+              this.screenSharerId = userId;
+            } else if (this.screenSharerId === userId) {
+              this.remoteIsSharing = false;
+              this.screenSharerId = null;
+            }
+          });
+        }),
+
+        this.webrtc.screenShareBlocked.subscribe(() => {
+          this.ngZone.run(() => {
+            this.snackBar.open('Someone is already sharing their screen.', 'OK', { duration: 3000 });
+          });
+        }),
+
+        this.webrtc.localScreenSharingStopped.subscribe(() => {
+          this.ngZone.run(() => {
+            this.screenSharing = false;
+            this.screenStreamForUI = null;
+            this.localVideoRef.nativeElement.srcObject = this.localStream;
+          });
+        })
       );
 
       const pendingCallerId = this.webrtc.getPendingCallerId();
@@ -133,6 +224,8 @@ export class VideocallComponent implements OnInit, OnDestroy {
         this.incomingCallerId = pendingCallerId;
         this.callState = 'incoming';
       } else if (this.targetUserId !== null) {
+        this.startCall();
+      } else if (this.channelId) {
         this.startCall();
       }
     } catch {
@@ -147,8 +240,22 @@ export class VideocallComponent implements OnInit, OnDestroy {
   // ── Call control ────────────────────────────────────────────────────────
 
   startCall(): void {
-    if (!this.targetUserId || !this.mediaReady) return;
+    if (!this.mediaReady) return;
     this.callState = 'calling';
+
+    if (this.channelId && !this.targetUserId) {
+      this.webrtc.startChannelMeeting(this.channelId).catch(() => {
+        this.callState = 'ready';
+        this.snackBar.open('Could not start the channel meeting.', 'Dismiss', { duration: 4000 });
+      });
+      return;
+    }
+
+    if (!this.targetUserId) {
+      this.callState = 'ready';
+      return;
+    }
+
     this.webrtc.startCall(this.targetUserId).catch(() => {
       this.callState = 'ready';
       this.snackBar.open('Could not start the call.', 'Dismiss', { duration: 4000 });
@@ -198,6 +305,23 @@ export class VideocallComponent implements OnInit, OnDestroy {
     this.localStream.getVideoTracks().forEach(t => { t.enabled = this.camEnabled; });
   }
 
+  async toggleScreenShare(): Promise<void> {
+    if (this.screenSharing) {
+      await this.webrtc.stopScreenShare();
+      // localScreenSharingStopped subscription handles state reset
+    } else {
+      try {
+        const screenStream = await this.webrtc.startScreenShare();
+        this.screenSharing = true;
+        this.screenStreamForUI = screenStream;
+        // localVideoRef keeps showing camera; localScreenRefSetter assigns stream
+        // once *ngIf renders the #localScreenRef element
+      } catch {
+        // user cancelled the picker — do nothing
+      }
+    }
+  }
+
   // ── Internal state helpers ─────────────────────────────────────────────
 
   private setConnected(): void {
@@ -235,8 +359,64 @@ export class VideocallComponent implements OnInit, OnDestroy {
   }
 
   private detachRemote(): void {
-    this.remoteVideoRef.nativeElement.srcObject = null;
+    this.remoteParticipants = [];
     this.hasRemoteStream = false;
+  }
+
+  private initialsOf(nameOrId: string): string {
+    if (!nameOrId) return '?';
+    const name = String(nameOrId).replace(/[^\p{L}\s]/gu, ' ');
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return (String(nameOrId).slice(0, 2) || '?').toUpperCase();
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  // Accept incoming call with option to enable/disable local video
+  acceptIncoming(acceptWithVideo = true): void {
+    if (this.incomingIsChannel) {
+      // Accept channel meeting: tell service to send 'channel-ready'
+      this.webrtc.acceptChannelCall(!!acceptWithVideo).then(() => {
+        this.incomingIsChannel = false;
+        this.incomingCallerId = null;
+        this.setConnected();
+      }).catch(() => {
+        this.snackBar.open('Could not join channel meeting.', 'Dismiss', { duration: 4000 });
+        this.callState = 'ready';
+      });
+      return;
+    }
+
+    if (!this.localStream) return this.acceptCall();
+    try {
+      this.localStream.getVideoTracks().forEach(t => { t.enabled = !!acceptWithVideo; });
+      this.camEnabled = !!acceptWithVideo;
+    } finally {
+      this.acceptCall();
+    }
+  }
+
+  // Explicit reject handler for incoming calls
+  rejectIncoming(): void {
+    if (this.incomingIsChannel) {
+      this.webrtc.rejectChannelCall();
+      this.incomingIsChannel = false;
+      this.incomingCallerId = null;
+      this.callState = 'ready';
+      return;
+    }
+    this.rejectCall();
+  }
+
+  private assignParticipantStreams(): void {
+    this.participantVideoRefs?.forEach(videoRef => {
+      const peerId = (videoRef.nativeElement.dataset as DOMStringMap)['peerId'];
+      if (!peerId) return;
+      const participant = this.remoteParticipants.find(item => item.peerId === peerId);
+      if (participant && videoRef.nativeElement.srcObject !== participant.stream) {
+        videoRef.nativeElement.srcObject = participant.stream;
+      }
+    });
   }
 
   /**
@@ -255,7 +435,7 @@ export class VideocallComponent implements OnInit, OnDestroy {
     this.localStream = null;
 
     this.localVideoRef.nativeElement.srcObject = null;
-    this.remoteVideoRef.nativeElement.srcObject = null;
+    this.detachRemote();
   }
 
   private stopDurationTimer(): void {
@@ -263,6 +443,11 @@ export class VideocallComponent implements OnInit, OnDestroy {
       clearInterval(this.durationTimer);
       this.durationTimer = null;
     }
+  }
+
+  ngAfterViewInit(): void {
+    this.participantVideoRefs.changes.subscribe(() => this.assignParticipantStreams());
+    this.assignParticipantStreams();
   }
 
   ngOnDestroy(): void {
