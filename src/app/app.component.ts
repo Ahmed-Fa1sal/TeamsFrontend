@@ -76,6 +76,45 @@ export class AppComponent implements OnInit, OnDestroy {
         this.router.navigate(['/videocall']);
       }
     });
+
+    this.mediaService.incomingChannelCall.pipe(takeUntil(this.destroy$)).subscribe(({ callerId, channelId }) => {
+      const message = `Channel meeting started by user #${callerId}`;
+      const snackRef = this.snackBar.open(message, 'Join', { duration: 10_000 });
+
+      snackRef.onAction().pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.router.navigate(['/videocall'], { queryParams: { channelId } });
+      });
+
+      if (!this.router.url.startsWith('/videocall')) {
+        this.router.navigate(['/videocall'], { queryParams: { channelId } });
+      }
+    });
+
+    this.mediaService.missedCall.pipe(takeUntil(this.destroy$)).subscribe(({ callerId }) => {
+      const message = `Missed call from user #${callerId}`;
+      const snackRef = this.snackBar.open(message, 'View', { duration: 10_000 });
+
+      snackRef.onAction().pipe(takeUntil(this.destroy$)).subscribe(() => {
+        if (!this.router.url.startsWith('/home')) {
+          this.router.navigate(['/home']);
+        }
+      });
+    });
+
+    this.notificationService.newNotifications$.pipe(takeUntil(this.destroy$)).subscribe((notifications) => {
+      if (!notifications.length) return;
+      const first = notifications[0];
+      const label = notifications.length === 1
+        ? first.title || first.message || 'New notification'
+        : `${notifications.length} new notifications`;
+      const snackRef = this.snackBar.open(label, 'View', { duration: 10_000 });
+
+      snackRef.onAction().pipe(takeUntil(this.destroy$)).subscribe(() => {
+        if (!this.router.url.startsWith('/home')) {
+          this.router.navigate(['/home']);
+        }
+      });
+    });
   }
 
   getRouteState(outlet: RouterOutlet): string {

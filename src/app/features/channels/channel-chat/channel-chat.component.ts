@@ -2,6 +2,7 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  OnDestroy,
   OnInit,
   ViewChild,
   inject,
@@ -17,6 +18,8 @@ import { TextFieldModule } from '@angular/cdk/text-field';
 import gsap from 'gsap';
 
 import { AuthService } from '@features/auth/services/auth.service';
+import { MediaServiceService } from '@app/services/media-service.service';
+import { TeamManagementFetcherService } from '@features/teams/services/team-management-fetcher.service';
 import {
   ChannelMessage,
   MessageGroup,
@@ -43,13 +46,15 @@ const REDUCED_MOTION =
   templateUrl: './channel-chat.component.html',
   styleUrls: ['./channel-chat.component.css'],
 })
-export class ChannelChatComponent implements OnInit, AfterViewInit {
+export class ChannelChatComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('messagesArea') private readonly messagesArea?: ElementRef<HTMLElement>;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
   private readonly authService = inject(AuthService);
+  private readonly mediaService = inject(MediaServiceService);
+  private readonly teamService = inject(TeamManagementFetcherService);
 
   channelId = 0;
   channelName = '';
@@ -78,6 +83,22 @@ export class ChannelChatComponent implements OnInit, AfterViewInit {
     this.teamName = state?.teamName ?? '';
     this.channelName = state?.channelName ?? '';
 
+    if (this.channelId) {
+      void this.mediaService.joinChannel(String(this.channelId));
+
+      if (!this.channelName) {
+        this.teamService.getChannelById(this.channelId).subscribe({
+          next: channel => {
+            this.channelName = channel.name;
+            if (!this.teamName && channel.teamName) {
+              this.teamName = channel.teamName;
+            }
+          },
+        });
+      }
+
+    }
+
     const user = this.authService.getCurrentUser();
     if (user) {
       this.currentUserId = user.id ?? 'me';
@@ -85,9 +106,6 @@ export class ChannelChatComponent implements OnInit, AfterViewInit {
       this.currentUserInitials = this.initialsOf(this.currentUserName || user.username);
     }
 
-    // TODO: load existing messages from the channel messages endpoint when one
-    // exists (no GET /channels/:id/messages is available yet). Until then the
-    // thread starts empty and holds locally-sent messages for this session.
     this.rebuildGroups();
   }
 
@@ -99,12 +117,23 @@ export class ChannelChatComponent implements OnInit, AfterViewInit {
     }
   }
 
+  ngOnDestroy(): void {
+    if (this.channelId) {
+      void this.mediaService.leaveChannel(String(this.channelId));
+    }
+  }
+
   onBack(): void {
     this.router.navigate(['/home']);
   }
 
   onStartMeeting(): void {
-    this.snackBar.open('Meeting started for this channel.', 'Dismiss', { duration: 3000 });
+    this.router.navigate(['/videocall'], {
+      queryParams: {
+        channelId: String(this.channelId),
+        channelName: this.channelName,
+      },
+    });
   }
 
   /** Enter sends (when non-empty), Shift+Enter newline, Esc blurs. */
@@ -132,8 +161,6 @@ export class ChannelChatComponent implements OnInit, AfterViewInit {
       status: 'sent',
     };
 
-    // TODO: POST to the channel messages endpoint when available; for now the
-    // message is appended to local session state only.
     this.messages = [...this.messages, message];
     this.messageText = '';
     this.rebuildGroups();

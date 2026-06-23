@@ -395,7 +395,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   onChannelOpen(channel: ApiChannel): void {
-    this.router.navigate(['/channels', channel.id]);
+    this.router.navigate(['/channels', channel.id], {
+      state: {
+        teamName: channel.teamName ?? '',
+        channelName: channel.name,
+      },
+    });
   }
 
   onNavigate(path: string): void {
