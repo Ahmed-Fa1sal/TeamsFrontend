@@ -312,26 +312,22 @@ export class ChatPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private toView(m: MessageDto): ChatMessage {
-    const senderId       = String(m.sender.id);
-    const myId           = String(this.currentUserId);
-    const senderFullName = m.sender.fullName?.trim() ?? '';
+    const senderId   = String(m.sender.id);
+    const myId       = String(this.currentUserId);
 
-    // Four independent signals — first truthy one wins.
     const byId       = myId !== '0' && senderId === myId;
-    const byUsername = !!this.currentUsername && m.sender.username === this.currentUsername;
-    const byFullName = !!this.currentUserName  && senderFullName   === this.currentUserName;
-    const byEmail    = !!this.currentUserEmail && m.sender.username === this.currentUserEmail;
-    const isOwn = byId || byUsername || byFullName || byEmail;
+    const byUsername = !byId && !!this.currentUsername && m.sender.username === this.currentUsername;
+    const isOwn      = byId || byUsername;
 
-    console.log('[Chat] toView — sender.id:', m.sender.id,
-      '| sender.username:', m.sender.username,
-      '| sender.fullName:', senderFullName,
-      '| myId:', myId, '| myUsername:', this.currentUsername,
-      '| byId:', byId, '| byUsername:', byUsername,
-      '| byFullName:', byFullName, '| byEmail:', byEmail,
-      '→ isOwn:', isOwn);
+    console.log('[Chat] toView'
+      + ' | currentUserId: '  + this.currentUserId
+      + ' | currentUsername: ' + this.currentUsername
+      + ' | sender.id: '      + m.sender.id
+      + ' | sender.username: ' + m.sender.username
+      + ' | content: '        + m.content.slice(0, 60)
+      + ' | isOwn: '          + isOwn);
 
-    const authorName = senderFullName || m.sender.username;
+    const authorName = m.sender.fullName?.trim() || m.sender.username;
     return {
       id: m.id,
       authorId: m.sender.id,
@@ -397,10 +393,20 @@ export class ChatPageComponent implements OnInit, AfterViewInit, OnDestroy {
       const parts = token.split('.');
       if (parts.length !== 3) return null;
       const payload = JSON.parse(atob(parts[1])) as Record<string, unknown>;
-      const id = payload['sub'] ?? payload['userId'] ?? payload['id'] ?? null;
-      console.log('[Chat] JWT payload fields — sub:', payload['sub'],
-        '| userId:', payload['userId'], '| id:', payload['id']);
-      return id as string | number | null;
+      console.log('[Chat] JWT payload — sub:', payload['sub'],
+        '| userId:', payload['userId'], '| id:', payload['id'],
+        '| user_id:', payload['user_id']);
+
+      // Prefer explicit numeric ID claims — Spring Boot puts the username in sub, not the numeric ID.
+      const explicit = payload['userId'] ?? payload['id'] ?? payload['user_id'] ?? null;
+      if (explicit !== null && explicit !== undefined) return explicit as string | number;
+
+      // Only use sub if it is a number or a string that looks like one.
+      const sub = payload['sub'];
+      if (typeof sub === 'number') return sub;
+      if (typeof sub === 'string' && /^\d+$/.test(sub)) return sub;
+
+      return null;
     } catch {
       return null;
     }

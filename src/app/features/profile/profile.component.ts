@@ -23,6 +23,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import gsap from 'gsap';
 
 import { AuthService } from '@features/auth/services/auth.service';
+import { ChatWebSocketService } from '@features/chat/services/chat-websocket.service';
 import { User } from '@features/auth/models/auth.models';
 import { SystemRole } from '@core/auth/roles';
 import { ProfileService } from './services/profile.service';
@@ -67,6 +68,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly snackBar: MatSnackBar,
     private readonly dialog: MatDialog,
+    private readonly chatWs: ChatWebSocketService,
   ) {}
 
   ngOnInit(): void {
@@ -172,6 +174,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       .subscribe((confirmed: boolean) => {
         if (!confirmed) return;
         this.isLoggingOut = true;
+        this.chatWs.disconnect();
         this.authService.logout().pipe(takeUntil(this.destroy$)).subscribe({
           next: () => this.router.navigate(['/login']),
           error: () => this.router.navigate(['/login']),

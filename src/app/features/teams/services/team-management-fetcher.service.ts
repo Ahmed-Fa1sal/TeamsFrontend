@@ -105,6 +105,23 @@ export class TeamManagementFetcherService {
 
   // ── Members ─────────────────────────────────────────────────────────────────
 
+  addChannelMember(teamId: number, channelId: number, userId: number): Observable<void> {
+    return this.http
+      .post<ApiResponse<unknown>>(
+        getApiUrl(`${API_CONFIG.ENDPOINTS.CHANNELS}/${teamId}/${channelId}/members/${userId}`),
+        {},
+      )
+      .pipe(map(r => this.unwrapVoid(r)));
+  }
+
+  removeChannelMember(teamId: number, channelId: number, userId: number): Observable<void> {
+    return this.http
+      .delete<ApiResponse<unknown>>(
+        getApiUrl(`${API_CONFIG.ENDPOINTS.CHANNELS}/${teamId}/${channelId}/members/${userId}`),
+      )
+      .pipe(map(r => this.unwrapVoid(r)));
+  }
+
   addTeamMember(teamId: number, userId: number): Observable<void> {
     return this.http
       .post<ApiResponse<unknown>>(

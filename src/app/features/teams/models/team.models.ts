@@ -60,6 +60,15 @@ export interface Team {
   updatedAt?: string;
 }
 
+export interface ChannelMember {
+  id: number;
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  avatar?: string;
+}
+
 export interface Channel {
   /** Primary key — Spring Boot usually serialises this as "id". */
   id?: number;
@@ -71,6 +80,7 @@ export interface Channel {
   teamId?: number;
   teamName?: string;
   memberCount?: number;
+  members?: ChannelMember[];
   /** Flat form: conversationId is returned at the top level. */
   conversationId?: number;
   /** Nested form: conversation object returned with its own id. */

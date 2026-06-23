@@ -135,6 +135,7 @@
 
           <div class="member-actions">
             <button
+              *ngIf="m.user.id !== currentUserId"
               type="button"
               class="btn-call"
               (click)="onDirectMessage(m)"
@@ -145,6 +146,7 @@
             </button>
 
             <button
+              *ngIf="m.user.id !== currentUserId"
               type="button"
               class="btn-call"
               (click)="onCallMember(m)"

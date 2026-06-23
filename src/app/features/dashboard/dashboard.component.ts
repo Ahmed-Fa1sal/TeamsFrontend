@@ -16,6 +16,7 @@ import gsap from 'gsap';
 
 import { AuthService } from '@features/auth/services/auth.service';
 import { User } from '@features/auth/models/auth.models';
+import { ChatWebSocketService } from '@features/chat/services/chat-websocket.service';
 import {
   AnalyticsService,
   AnalyticsOverview,
@@ -71,6 +72,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private readonly analyticsService: AnalyticsService,
     private readonly router: Router,
     private readonly dialog: MatDialog,
+    private readonly chatWs: ChatWebSocketService,
   ) {}
 
   ngOnInit(): void {
@@ -130,6 +132,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((confirmed: boolean) => {
         if (!confirmed) return;
+        this.chatWs.disconnect();
         this.isLoggingOut = true;
         this.authService.logout().pipe(takeUntil(this.destroy$)).subscribe({
           next: () => this.router.navigate(['/login']),

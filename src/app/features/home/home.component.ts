@@ -35,6 +35,7 @@ import {
 } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { NotificationService } from '../notifications/notification.service';
 import { NotificationPanelComponent } from '../notifications/notification-panel/notification-panel.component';
+import { ChatWebSocketService } from '../chat/services/chat-websocket.service';
 import { AddUserDialogComponent } from '../admin/add-user-dialog/add-user-dialog.component';
 import { LogoComponent } from '../../shared/components/logo/logo.component';
 import { animatePageEntrance, animateStatCards } from '@core/animations/page-animations';
@@ -147,7 +148,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     private readonly orgService: OrganizationService,
     readonly permissions: PermissionService,
     private readonly notificationService: NotificationService,
-    private readonly el: ElementRef<HTMLElement>
+    private readonly el: ElementRef<HTMLElement>,
+    private readonly chatWs: ChatWebSocketService,
   ) {}
 
   ngOnInit(): void {
@@ -452,6 +454,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     ref.afterClosed().pipe(takeUntil(this.destroy$)).subscribe((confirmed: boolean) => {
       if (!confirmed) return;
+      this.chatWs.disconnect();
       this.isLoggingOut = true;
       this.authService
         .logout()

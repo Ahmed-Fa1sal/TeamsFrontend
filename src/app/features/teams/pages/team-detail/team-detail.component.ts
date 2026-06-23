@@ -453,6 +453,10 @@ export class TeamDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  get currentUserId(): number {
+    return Number(this.authService.getCurrentUser()?.id);
+  }
+
   /** Owner/Admin can act on members other than themselves; the owner row is never removable. */
   canActOnMember(member: TeamMember): boolean {
     const currentUserId = Number(this.authService.getCurrentUser()?.id);
