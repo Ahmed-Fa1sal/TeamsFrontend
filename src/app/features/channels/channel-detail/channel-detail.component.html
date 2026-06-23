@@ -1,0 +1,163 @@
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar__brand">
+    <div class="topbar__logo" aria-hidden="true">T</div>
+    <span class="topbar__product">Teams</span>
+  </div>
+
+  <nav class="topbar__nav" aria-label="Primary navigation">
+    <button type="button" class="topbar__nav-item topbar__nav-btn" (click)="onBack()">
+      <i class="pi pi-th-large" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Home</span>
+    </button>
+  </nav>
+</header>
+
+<!-- LOADING STATE -->
+<main class="page-main" *ngIf="isLoading">
+  <div class="skeleton-card">
+    <div class="skeleton-header">
+      <div class="skeleton-avatar pulse"></div>
+      <div class="skeleton-lines">
+        <div class="skeleton-line skeleton-line--lg pulse"></div>
+        <div class="skeleton-line skeleton-line--sm pulse"></div>
+      </div>
+    </div>
+    <div class="skeleton-body">
+      <div class="skeleton-line pulse" style="width: 100%; height: 14px;"></div>
+      <div class="skeleton-line pulse" style="width: 80%; height: 14px;"></div>
+      <div class="skeleton-line pulse" style="width: 60%; height: 14px;"></div>
+    </div>
+  </div>
+</main>
+
+<!-- CHANNEL DETAIL -->
+<main class="page-main" *ngIf="!isLoading && channel">
+  <div class="detail-card">
+
+    <!-- Channel hero -->
+    <div class="team-hero">
+      <div class="team-avatar" style="background: #5b5fc7;">{{ avatarLabel }}</div>
+      <div class="team-identity">
+        <div class="team-name-row">
+          <h1 class="team-name"># {{ channel!.name }}</h1>
+          <span class="badge badge--private" *ngIf="!channel!.isPublic">Private</span>
+          <span class="badge badge--public" *ngIf="channel!.isPublic">Public</span>
+        </div>
+        <p class="team-desc" *ngIf="channel!.description">{{ channel!.description }}</p>
+        <p class="team-desc team-desc--empty" *ngIf="!channel!.description">No description</p>
+      </div>
+    </div>
+
+    <!-- Stats strip -->
+    <div class="stats-strip">
+      <div class="stat-item">
+        <span class="stat-value">{{ channel!.memberCount ?? members.length }}</span>
+        <span class="stat-label">Members</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-value">{{ channel!.isPublic ? 'Public' : 'Private' }}</span>
+        <span class="stat-label">Visibility</span>
+      </div>
+      <div class="stat-divider"></div>
+      <button
+        type="button"
+        class="stat-item stat-item--clickable"
+        (click)="onOpenChat()"
+        matTooltip="Open channel chat">
+        <i class="pi pi-comments stat-value" style="font-size:1.1rem" aria-hidden="true"></i>
+        <span class="stat-label">Open Chat</span>
+      </button>
+    </div>
+
+    <!-- Metadata grid -->
+    <div class="meta-grid">
+      <div class="meta-item" *ngIf="channel!.teamName">
+        <span class="meta-label">Team</span>
+        <button type="button" class="meta-link" (click)="onViewTeam()">{{ channel!.teamName }}</button>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Channel ID</span>
+        <span class="meta-value">{{ channel!.id ?? channel!.channelId ?? '—' }}</span>
+      </div>
+    </div>
+
+    <!-- Members section -->
+    <div class="section-divider"></div>
+    <div class="section-block">
+      <div class="section-header">
+        <div class="section-header__left">
+          <span class="section-header__icon" aria-hidden="true"><i class="pi pi-users"></i></span>
+          <div class="section-header__text">
+            <h2 class="section-header__title">Members</h2>
+          </div>
+          <span class="count-chip">{{ members.length }}</span>
+        </div>
+        <button
+          *ngIf="canManage"
+          type="button"
+          class="btn-primary-soft"
+          (click)="openAddMember()"
+          [disabled]="isActing">
+          <i class="pi pi-user-plus" aria-hidden="true"></i>
+          <span class="btn-label">Add Member</span>
+        </button>
+      </div>
+
+      <ul class="member-list" role="list" *ngIf="members.length > 0">
+        <li class="member-item" *ngFor="let m of members" role="listitem">
+          <div class="member-avatar">{{ memberInitials(m) }}</div>
+          <div class="member-info">
+            <span class="member-name">{{ memberDisplayName(m) }}</span>
+            <span class="member-username">&#64;{{ m.username }}</span>
+          </div>
+          <div class="member-actions">
+            <button
+              *ngIf="canManage"
+              type="button"
+              class="btn-remove"
+              (click)="confirmRemoveMember(m)"
+              [disabled]="isActing"
+              matTooltip="Remove from channel"
+              [attr.aria-label]="'Remove ' + memberDisplayName(m) + ' from channel'">
+              <i class="pi pi-user-minus" aria-hidden="true"></i>
+              <span class="btn-label">Remove</span>
+            </button>
+          </div>
+        </li>
+      </ul>
+
+      <p class="empty-copy" *ngIf="members.length === 0">No members loaded.</p>
+    </div>
+
+    <!-- Action bar -->
+    <div class="section-divider"></div>
+    <div class="action-bar">
+      <button type="button" class="btn-text btn-back" (click)="onBack()">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Back
+      </button>
+
+      <div class="action-bar__right">
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="onOpenChat()">
+          <i class="pi pi-comments" aria-hidden="true"></i>
+          Open Chat
+        </button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ERROR STATE -->
+<main class="page-main" *ngIf="!isLoading && !channel">
+  <div class="detail-card empty-state">
+    <i class="pi pi-exclamation-triangle empty-icon" aria-hidden="true"></i>
+    <p class="empty-msg">{{ loadError || 'Channel not found or could not be loaded.' }}</p>
+    <button type="button" mat-flat-button color="primary" (click)="onBack()">Back to Home</button>
+  </div>
+</main>

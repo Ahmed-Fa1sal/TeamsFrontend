@@ -35,7 +35,11 @@
               "src/styles/material-theme.scss",
               "src/styles.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "@stomp/stompjs",
+              "sockjs-client"
+            ]
           },
           "configurations": {
             "production": {

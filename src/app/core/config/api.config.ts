@@ -28,6 +28,10 @@ export const API_CONFIG = {
       SEARCH: '/teams/search',
     },
     CHANNELS: '/channels',
+    CONVERSATIONS: {
+      BASE: '/conversations',
+      MESSAGES: '/conversations/:id/messages',
+    },
     ANALYTICS: {
       OVERVIEW: '/analytics/overview',
       ACTIVITY: '/analytics/activity',

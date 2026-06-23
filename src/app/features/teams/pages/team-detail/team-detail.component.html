@@ -62,6 +62,15 @@
         <span class="stat-label">Channels</span>
       </button>
       <div class="stat-divider"></div>
+      <button
+        type="button"
+        class="stat-item stat-item--clickable"
+        (click)="onTeamChat()"
+        matTooltip="Open team group chat">
+        <i class="pi pi-comments stat-value" style="font-size:1.1rem" aria-hidden="true"></i>
+        <span class="stat-label">Team Chat</span>
+      </button>
+      <div class="stat-divider"></div>
       <div
         class="stat-item"
         [matTooltip]="team!.isPublic
@@ -126,6 +135,18 @@
 
           <div class="member-actions">
             <button
+              *ngIf="m.user.id !== currentUserId"
+              type="button"
+              class="btn-call"
+              (click)="onDirectMessage(m)"
+              matTooltip="Message {{ memberDisplayName(m) }}"
+              [attr.aria-label]="'Message ' + memberDisplayName(m)">
+              <i class="pi pi-comments" aria-hidden="true"></i>
+              <span class="btn-label">Message</span>
+            </button>
+
+            <button
+              *ngIf="m.user.id !== currentUserId"
               type="button"
               class="btn-call"
               (click)="onCallMember(m)"

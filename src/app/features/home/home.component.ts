@@ -35,6 +35,7 @@ import {
 } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { NotificationService } from '../notifications/notification.service';
 import { NotificationPanelComponent } from '../notifications/notification-panel/notification-panel.component';
+import { ChatWebSocketService } from '../chat/services/chat-websocket.service';
 import { AddUserDialogComponent } from '../admin/add-user-dialog/add-user-dialog.component';
 import { LogoComponent } from '../../shared/components/logo/logo.component';
 import { animatePageEntrance, animateStatCards } from '@core/animations/page-animations';
@@ -147,7 +148,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     private readonly orgService: OrganizationService,
     readonly permissions: PermissionService,
     private readonly notificationService: NotificationService,
-    private readonly el: ElementRef<HTMLElement>
+    private readonly el: ElementRef<HTMLElement>,
+    private readonly chatWs: ChatWebSocketService,
   ) {}
 
   ngOnInit(): void {
@@ -322,7 +324,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   channelColor(channel: ApiChannel): string {
-    return this.AVATAR_COLORS[channel.teamId % this.AVATAR_COLORS.length];
+    return this.AVATAR_COLORS[(channel.teamId ?? 0) % this.AVATAR_COLORS.length];
   }
 
   // ── Event handlers ─────────────────────────────────────────────────────────
@@ -395,12 +397,24 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   onChannelOpen(channel: ApiChannel): void {
-    this.router.navigate(['/channels', channel.id], {
-      state: {
-        teamName: channel.teamName ?? '',
-        channelName: channel.name,
-      },
-    });
+    console.log('[onChannelOpen] channel:', channel);
+
+    const channelId = channel.id ?? channel.channelId;
+    const teamId = channel.teamId;
+
+    if (channelId && teamId) {
+      this.router.navigate(['/teams', teamId, 'channels', channelId]);
+    } else {
+      console.error(
+        '[HomeComponent] Cannot determine channel/team ID — check the fields the backend returns:',
+        channel,
+      );
+      this.snackBar.open(
+        'Cannot open channel: server response is missing the channel or team ID. Check the browser console.',
+        'Dismiss',
+        { duration: 5000 },
+      );
+    }
   }
 
   onNavigate(path: string): void {
@@ -440,6 +454,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     ref.afterClosed().pipe(takeUntil(this.destroy$)).subscribe((confirmed: boolean) => {
       if (!confirmed) return;
+      this.chatWs.disconnect();
       this.isLoggingOut = true;
       this.authService
         .logout()
