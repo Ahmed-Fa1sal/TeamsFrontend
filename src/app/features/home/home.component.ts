@@ -108,7 +108,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly unreadCount$ = inject(NotificationService).unreadCount$;
 
   readonly comingSoon = [
-    { id: 'chat', label: 'Chat', icon: 'pi pi-comments', description: 'Direct and group messaging' },
     { id: 'meetings', label: 'Meetings', icon: 'pi pi-video', description: 'Schedule and join video calls' },
   ];
 

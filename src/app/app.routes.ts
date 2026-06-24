@@ -56,6 +56,13 @@ export const APP_ROUTES: Routes = [
     canActivate: [authGuardFn],
     data: { animation: 'TeamDetail' }
   },
+  {
+    path: 'chats',
+    loadComponent: () =>
+      import('@features/chats/chats-page.component').then(m => m.ChatsPageComponent),
+    canActivate: [authGuardFn],
+    data: { animation: 'Chats' }
+  },
   // ── Chat routes (all served by ChatPageComponent) ───────────────────────────
   {
     path: 'chat/conversations/:conversationId',

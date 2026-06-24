@@ -1,0 +1,227 @@
+<!-- ══════════════════════════════════════════════
+     TOP BAR
+     ══════════════════════════════════════════════ -->
+<header class="topbar">
+
+  <div class="topbar__brand">
+    <a routerLink="/home" class="topbar__brand-link" aria-label="Teams App home">
+      <app-logo variant="wordmark_white" [height]="32" />
+    </a>
+  </div>
+
+  <nav class="topbar__nav" aria-label="Primary navigation">
+    <a routerLink="/home" class="topbar__nav-item topbar__nav-btn" aria-label="Go to Dashboard">
+      <i class="pi pi-th-large" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Dashboard</span>
+    </a>
+    <span class="topbar__nav-item topbar__nav-item--active" aria-current="page">
+      <i class="pi pi-comments" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Chats</span>
+    </span>
+  </nav>
+
+  <div class="topbar__end">
+
+    <!-- Notification bell -->
+    <button
+      type="button"
+      mat-icon-button
+      class="notif-bell-btn"
+      [matMenuTriggerFor]="notifMenu"
+      (menuOpened)="onNotifPanelOpen()"
+      aria-label="Notifications"
+    >
+      <span
+        [matBadge]="(unreadCount$ | async) || null"
+        matBadgeColor="warn"
+        matBadgeSize="small"
+        matBadgeOverlap="true"
+      >
+        <i class="pi pi-bell" aria-hidden="true"></i>
+      </span>
+    </button>
+
+    <mat-menu #notifMenu="matMenu" xPosition="before" class="notif-menu-panel">
+      <div (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+        <app-notification-panel />
+      </div>
+    </mat-menu>
+
+    @if (currentUser) {
+      <button
+        type="button"
+        class="topbar__profile-btn"
+        [matMenuTriggerFor]="profileMenu"
+        aria-haspopup="true"
+        aria-label="User menu"
+      >
+        <div class="av-circle av-circle--sm topbar-av" aria-hidden="true">{{ userInitials }}</div>
+        <div class="topbar__user-info">
+          <span class="topbar__user-name">{{ fullName }}</span>
+          <span class="topbar__user-sub">{{ currentUser.username }}</span>
+        </div>
+        <i class="pi pi-chevron-down topbar__caret" aria-hidden="true"></i>
+      </button>
+    }
+
+    <mat-menu #profileMenu="matMenu" xPosition="before" class="profile-panel">
+      @if (currentUser) {
+        <div
+          class="pp-body"
+          (click)="$event.stopPropagation()"
+          (keydown)="$event.stopPropagation()"
+        >
+          <div class="pp-user">
+            <div class="av-circle av-circle--lg pp-av" aria-hidden="true">{{ userInitials }}</div>
+            <div class="pp-user-info">
+              <span class="pp-name">{{ fullName }}</span>
+              <span class="pp-email">{{ currentUser.email }}</span>
+            </div>
+          </div>
+          <mat-divider></mat-divider>
+          <button
+            type="button"
+            mat-menu-item
+            [disabled]="isLoggingOut"
+            (click)="onLogout()"
+            class="pp-signout-btn"
+          >
+            <i class="pi pi-sign-out" aria-hidden="true"></i>
+            <span>{{ isLoggingOut ? 'Signing out…' : 'Sign out' }}</span>
+          </button>
+        </div>
+      }
+    </mat-menu>
+
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════
+     MAIN
+     ══════════════════════════════════════════════ -->
+<main class="chats-main">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-header__icon" aria-hidden="true">
+      <i class="pi pi-comments"></i>
+    </div>
+    <div class="page-header__text">
+      <h1 class="page-header__title">Chats</h1>
+      @if (!isLoading && !loadError) {
+        <p class="page-header__sub">
+          {{ conversations.length }} conversation{{ conversations.length !== 1 ? 's' : '' }}
+        </p>
+      }
+    </div>
+  </div>
+
+  <!-- Conversations card -->
+  <section class="conv-card" aria-label="Conversations">
+
+    <!-- Loading state -->
+    @if (isLoading) {
+      <div class="conv-loading" aria-live="polite" aria-busy="true" aria-label="Loading conversations">
+        @for (i of skeletonRows; track i) {
+          <div class="conv-skeleton">
+            <div class="skel skel--avatar"></div>
+            <div class="skel-body">
+              <div class="skel skel--name"></div>
+              <div class="skel skel--preview"></div>
+            </div>
+            <div class="skel skel--time"></div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Error state -->
+    @else if (loadError) {
+      <div class="conv-state" role="alert">
+        <div class="state-icon state-icon--error" aria-hidden="true">
+          <i class="pi pi-exclamation-triangle"></i>
+        </div>
+        <p class="state-title">Something went wrong</p>
+        <p class="state-sub">{{ loadError }}</p>
+        <button type="button" mat-stroked-button class="retry-btn" (click)="loadConversations()">
+          <i class="pi pi-refresh" aria-hidden="true"></i>
+          Try again
+        </button>
+      </div>
+    }
+
+    <!-- Empty state -->
+    @else if (conversations.length === 0) {
+      <div class="conv-state">
+        <div class="state-icon state-icon--empty" aria-hidden="true">
+          <i class="pi pi-comments"></i>
+        </div>
+        <p class="state-title">No conversations yet</p>
+        <p class="state-sub">Start a direct message or join a team to begin chatting.</p>
+      </div>
+    }
+
+    <!-- Conversation list -->
+    @else {
+      <ul class="conv-list" role="list">
+        @for (conv of conversations; track conv.id) {
+          <li>
+            <button
+              type="button"
+              matRipple
+              class="conv-row"
+              [attr.aria-label]="conv.name + ' — ' + typeLabel(conv.type)"
+              (click)="onConversationClick(conv)"
+            >
+              <!-- Avatar with type-badge overlay -->
+              <div class="conv-avatar-wrap" aria-hidden="true">
+                <div
+                  class="av-circle av-circle--md conv-av"
+                  [ngStyle]="{ background: avatarColor(conv.id), color: '#fff' }"
+                >{{ avatarLabel(conv.name) }}</div>
+                <span class="conv-type-badge">
+                  <i [class]="typeIcon(conv.type)"></i>
+                </span>
+              </div>
+
+              <!-- Text block -->
+              <div class="conv-body">
+                <div class="conv-top">
+                  <span
+                    class="conv-name"
+                    [class.conv-name--unread]="(conv.unreadCount ?? 0) > 0"
+                  >{{ conv.name }}</span>
+                  <span class="conv-time">
+                    {{ formatTimestamp(conv.lastMessage?.createdAt ?? conv.updatedAt ?? conv.createdAt) }}
+                  </span>
+                </div>
+                <div class="conv-bottom">
+                  <span
+                    class="conv-preview"
+                    [class.conv-preview--unread]="(conv.unreadCount ?? 0) > 0"
+                  >
+                    @if (conv.lastMessage) {
+                      <span class="conv-preview__sender">{{ conv.lastMessage.sender.fullName }}:</span>
+                      {{ conv.lastMessage.content }}
+                    } @else {
+                      No messages yet
+                    }
+                  </span>
+                  @if ((conv.unreadCount ?? 0) > 0) {
+                    <span
+                      class="conv-unread"
+                      [attr.aria-label]="conv.unreadCount + ' unread'"
+                    >{{ conv.unreadCount }}</span>
+                  }
+                </div>
+              </div>
+
+              <i class="pi pi-chevron-right conv-chevron" aria-hidden="true"></i>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+  </section>
+</main>
