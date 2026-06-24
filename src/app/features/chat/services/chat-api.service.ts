@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { getApiUrl } from '@core/config/api.config';
-import { ConversationDto, MessageDto, SendMessageRequest } from '../models/chat.models';
+import { ConversationDto, ConversationSummary, MessageDto, SendMessageRequest } from '../models/chat.models';
 
 @Injectable({ providedIn: 'root' })
 export class ChatApiService {
@@ -56,6 +56,15 @@ export class ChatApiService {
       .pipe(map(res => this.unwrap(res) as ConversationDto));
   }
 
+  /** GET /conversations/my → ConversationSummary[] */
+  getMyConversations(): Observable<ConversationSummary[]> {
+    const url = getApiUrl('/conversations/my');
+    console.log('[ChatAPI] GET my conversations:', url);
+    return this.http
+      .get<unknown>(url)
+      .pipe(map(res => this.extractList<ConversationSummary>(res)));
+  }
+
   // ── Response helpers ────────────────────────────────────────────────────────
 
   private unwrap(res: unknown): unknown {
@@ -66,11 +75,15 @@ export class ChatApiService {
   }
 
   private extractMessages(res: unknown): MessageDto[] {
+    return this.extractList<MessageDto>(res);
+  }
+
+  private extractList<T>(res: unknown): T[] {
     const data = this.unwrap(res);
-    if (Array.isArray(data)) return data as MessageDto[];
+    if (Array.isArray(data)) return data as T[];
     if (data && typeof data === 'object') {
       const content = (data as Record<string, unknown>)['content'];
-      if (Array.isArray(content)) return content as MessageDto[];
+      if (Array.isArray(content)) return content as T[];
     }
     return [];
   }

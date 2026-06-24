@@ -52,3 +52,12 @@ export interface ChatMessageGroup {
   dateLabel: string;
   messages: ChatMessage[];
 }
+
+export interface ConversationSummary extends ConversationDto {
+  lastMessage?: {
+    content: string;
+    sender: MessageSender;
+    createdAt: string;
+  } | null;
+  unreadCount?: number;
+}

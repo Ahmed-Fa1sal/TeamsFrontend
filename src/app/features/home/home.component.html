@@ -14,6 +14,15 @@
       <i class="pi pi-th-large" aria-hidden="true"></i>
       <span class="topbar__nav-label">Dashboard</span>
     </span>
+    <button
+      type="button"
+      class="topbar__nav-item topbar__nav-btn"
+      (click)="onNavigate('/chats')"
+      aria-label="Go to Chats"
+    >
+      <i class="pi pi-comments" aria-hidden="true"></i>
+      <span class="topbar__nav-label">Chats</span>
+    </button>
   </nav>
 
   <div class="topbar__end">
@@ -452,6 +461,64 @@
       </section>
 
     </div>
+
+    <!-- ══════════════════════════════════════════
+         CHATS FEATURE CARD
+         ══════════════════════════════════════════ -->
+    <section class="card animate-card" aria-labelledby="chat-heading">
+      <div class="card__head">
+        <div class="card__head-l">
+          <span class="card__icon card__icon--purple">
+            <i class="pi pi-comments" aria-hidden="true"></i>
+          </span>
+          <h2 class="card__title" id="chat-heading">Chats</h2>
+        </div>
+        <button type="button" mat-button class="head-action-btn" (click)="onNavigate('/chats')">
+          Open Chats
+        </button>
+      </div>
+
+      <div class="chat-feat-body">
+        <div class="chat-feat-highlights">
+
+          <div class="chat-feat-item">
+            <span class="chat-feat-item__icon" aria-hidden="true">
+              <i class="pi pi-user"></i>
+            </span>
+            <div class="chat-feat-item__text">
+              <span class="chat-feat-item__label">Direct Messages</span>
+              <span class="chat-feat-item__desc">One-on-one conversations</span>
+            </div>
+          </div>
+
+          <div class="chat-feat-item">
+            <span class="chat-feat-item__icon" aria-hidden="true">
+              <i class="pi pi-users"></i>
+            </span>
+            <div class="chat-feat-item__text">
+              <span class="chat-feat-item__label">Team Chats</span>
+              <span class="chat-feat-item__desc">Group conversations</span>
+            </div>
+          </div>
+
+          <div class="chat-feat-item">
+            <span class="chat-feat-item__icon" aria-hidden="true">
+              <i class="pi pi-hashtag"></i>
+            </span>
+            <div class="chat-feat-item__text">
+              <span class="chat-feat-item__label">Channel Chats</span>
+              <span class="chat-feat-item__desc">Topic-based discussions</span>
+            </div>
+          </div>
+
+        </div>
+
+        <button type="button" mat-flat-button class="chat-feat-cta" (click)="onNavigate('/chats')">
+          <i class="pi pi-arrow-right" aria-hidden="true"></i>
+          Go to Chats
+        </button>
+      </div>
+    </section>
 
     <!-- ══════════════════════════════════════════
          ROW 2: My Teams + My Channels (regular users only)
